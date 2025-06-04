@@ -1,0 +1,17 @@
+nestjs
+feathersjs
+loopback
+adonisjs
+tsed
+nitropack
+angular
+@types/express
+@types/react
+vue
+@types/koa
+@types/meteor
+@types/mithril
+@types/polymer
+aurelia
+@types/mocha
+@types/jasmine

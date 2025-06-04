@@ -1,0 +1,16 @@
+org.springframework.boot
+org.springframework
+com.google.gwt
+org.hibernate
+org.apache.struts
+com.typesafe.play
+org.grails
+javax.faces
+javax.servlet
+org.glassfish
+io.dropwizard
+com.vaadin
+org.apache.wicket
+com.bladejava
+jakarta.platform
+jakarta.servlet

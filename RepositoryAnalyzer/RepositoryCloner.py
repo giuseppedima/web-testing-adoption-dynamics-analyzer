@@ -21,7 +21,7 @@ class Cloner:
     def is_directory_empty(self, path):
         return os.path.exists(path) and not os.listdir(path)
 
-    def clone_repository(self, repository):
+    def clone_repository(self, repository,commit):
         repo_url = self.create_repository_url(repository)
         repo_path = ""
         logging.info("sto clonando " + repository)
@@ -35,11 +35,19 @@ class Cloner:
                     os.rmdir(repo_path)
                 if not os.path.exists(repo_path):
                     #depth=1 to not clone all the history
-                    Repo.clone_from(repo_url, str(repo_path))
+                    repo = Repo.clone_from(repo_url, str(repo_path))
                     logging.info('repository clonata')
                     print(f"Repository '{repo_name}' cloned successfully.")
                     print("ho appena clonato " + str(repo_path))
                     logging.info("ho appena clonato " + str(repo_path))
+                    if commit:
+                        try:
+                            repo.git.checkout(commit)
+                            logging.info(f" checked out to commit {commit}")
+                            print(f"Checked out to commit: {commit}")
+                        except GitCommandError as checkout_error:
+                            logging.error(f"Failed to checkout commit {commit}: {str(checkout_error)}")
+                            print(f"Failed to checkout commit {commit}: {str(checkout_error)}")
                     return repo_path
                 else:
                     logging.warning("ho già trovato clonato " + str(repo_path))

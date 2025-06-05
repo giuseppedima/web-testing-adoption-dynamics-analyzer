@@ -8,15 +8,16 @@ import time
 import warnings
 from pathlib import Path
 from pandas.errors import PerformanceWarning
-
-from Dataset.Repository import GUITestingRepoDetails,RepositoryModel, GUITestingTestDetails
 from ProjectAnalyzer.JSTS.JavascriptDataAnalyzer import JavascriptDataAnalyzer
 import os.path
+import matplotlib.pyplot as plt
 import pandas as pd
 from pydriller import Repository, ModificationType
+import matplotlib.patches as mpatches
 from datetime import  datetime
 from Dataset.DBconnector import Session, engine
 from RepositoryAnalyzer.RepositoryCloner import Cloner
+from sqlalchemy import or_, and_
 
 
 class CommitAnalyzer:
@@ -65,24 +66,6 @@ class CommitAnalyzer:
                 real_envolved_commit.append(commit)
         return real_envolved_commit
 
-    @staticmethod
-    def get_repo_with_number_of_test_lower_than_n(n):
-        try:
-            session = Session(bind=engine)
-            print("Connection successful!")
-
-            records = session.query(RepositoryModel, GUITestingRepoDetails).join(
-                GUITestingRepoDetails,
-                RepositoryModel.name == GUITestingRepoDetails.repository_name
-            ).filter(
-                GUITestingRepoDetails.number_of_tests <= n
-            ).all()
-
-            return records
-        except Exception as e:
-            print(f"Error connecting to the database: {e}")
-        finally:
-            session.close()
 
     @staticmethod
     def get_first_available_row(df):
@@ -185,20 +168,67 @@ class CommitAnalyzer:
         return  file_paths
 
     @staticmethod
-    def get_tests_by_repo_name(repo_name):
-        try:
-            session = Session(bind=engine)
-            print("Connection successful!")
-            records = session.query(GUITestingTestDetails).filter(
-                GUITestingTestDetails.repository_name == repo_name
-            ).all()
+    def get_tests_path_without_localpath(filename,repo_name):
+        to_replace = '/home/sergio/MSR25-E2EMining/clone/'+repo_name.replace('/','_')
+        df = pd.read_csv(filename)
+        filtered_data_df = df[df['Number of @Test']>0]
+        filtered_data_df['File Path'] = filtered_data_df['File Path'].str.replace(to_replace+"/",'')
+        return  filtered_data_df['File Path']
 
-            return records
-        except Exception as e:
-            print(f"Error connecting to the database: {e}")
-        finally:
-            session.close()
+    @staticmethod
+    def get_tests_path(filename, repo_name):
+        clone_path = '/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/clone/'
+        to_replace = '/home/sergio/MSR25-E2EMining/clone/'
+        df = pd.read_csv(filename)
+        filtered_data_df = df[df['Number of @Test'] > 0]
+        #filtered_data_df['File Path'] = filtered_data_df['File Path'].str.replace(to_replace, '')
+        return filtered_data_df['File Path'].str.replace(to_replace,clone_path)
 
+
+    @staticmethod
+    def get_tests_path_missed_repo(filename,repo_name):
+        clone_path = '/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/clone/'
+        to_replace = '/home/sergio/MSR25-E2EMining/clone/'
+        df = pd.read_csv(filename)
+        filtered_data_df = df[df['number of test'] > 0]
+        #filtered_data_df['File Path'] = filtered_data_df['File Path'].str.replace(to_replace, '')
+        return filtered_data_df['file_path'].str.replace(to_replace,clone_path)
+
+    @staticmethod
+    def get_tests_path_missed_repo_without_localpath(filename,repo_name):
+        to_replace = '/home/sergio/MSR25-E2EMining/clone/' + repo_name.replace('/', '_')
+        df = pd.read_csv(filename)
+        filtered_data_df = df[df['number of test']> 0]
+        filtered_data_df['file_path']= filtered_data_df['file_path'].str.replace(to_replace + "/", '')
+        return filtered_data_df['file_path']
+
+
+    @staticmethod
+    def get_tests_path_main(file_analysis_name,repo_name,flag):
+        files_name = []
+        if os.path.exists(CommitAnalyzer.java_analysis_folder + "/" + file_analysis_name):
+            if flag:
+                files_name = CommitAnalyzer.get_tests_path(CommitAnalyzer.java_analysis_folder + "/" + file_analysis_name,repo_name)
+            else:
+                files_name = CommitAnalyzer.get_tests_path_without_localpath(CommitAnalyzer.java_analysis_folder + "/" + file_analysis_name,repo_name)
+
+        elif os.path.exists(CommitAnalyzer.js_ts_analysis_folder + "/" + file_analysis_name):
+            if flag:
+                files_name = CommitAnalyzer.get_tests_path(CommitAnalyzer.js_ts_analysis_folder + "/" + file_analysis_name,repo_name)
+            else:
+                files_name = CommitAnalyzer.get_tests_path_without_localpath(CommitAnalyzer.js_ts_analysis_folder + "/" + file_analysis_name,repo_name)
+
+        elif os.path.exists(CommitAnalyzer.py_analysis_folder + "/" + file_analysis_name):
+            if flag:
+                files_name = CommitAnalyzer.get_tests_path(CommitAnalyzer.py_analysis_folder + "/" + file_analysis_name,repo_name)
+            else:
+                files_name = CommitAnalyzer.get_tests_path_without_localpath(CommitAnalyzer.py_analysis_folder + "/" + file_analysis_name,repo_name)
+        elif os.path.exists(CommitAnalyzer.missed_repo_folder + "/" + file_analysis_name):
+            if flag:
+                files_name = CommitAnalyzer.get_tests_path_missed_repo(CommitAnalyzer.missed_repo_folder + "/" + file_analysis_name,repo_name)
+            else:
+                files_name = CommitAnalyzer.get_tests_path_missed_repo_without_localpath(CommitAnalyzer.missed_repo_folder + "/" + file_analysis_name,repo_name)
+        return files_name
 
     @staticmethod
     def get_commits_before_the_first_webgui(all_commits, first_guiweb_commit):
@@ -215,16 +245,14 @@ class CommitAnalyzer:
         sorted_non_merge_commits = sorted(non_merge_commits, key=lambda commit: commit.committer_date)
         print(f"First commit was : {sorted_non_merge_commits[0].committer_date}")
         print(f"The repo {repo_name} has : {len(all_commits)} commits overall!")
-        return sorted_non_merge_commits
+        return sorted_non_merge_commits # restituire anche il primo per salvarlo
 
     @staticmethod
-    def get_all_guiweb_commits_sorted(repo_path,tests,repo_name):
-        prefix = '/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/clone'
-        # Add the prefix
-        full_paths = [f"{prefix}{path}" for path in tests]
-        print(f"The repo {repo_name} has {len(tests)} number of e2e test files.")
+    def get_all_guiweb_commits_sorted(repo_path,file_analysis_name,repo_name):
+        files_name = CommitAnalyzer.get_tests_path_main(file_analysis_name,repo_name,True)
+        print(f"The repo {repo_name} has {len(files_name)} number of e2e test files.")
         sel_commits = []
-        for file in full_paths:
+        for file in files_name:
             try:
                 repo = Repository(repo_path, filepath = file)
                 file_commit_involved = list(repo.traverse_commits())
@@ -240,47 +268,44 @@ class CommitAnalyzer:
                     del repo
                 gc.collect()
         sorted_commits = sorted(sel_commits, key=lambda commit: commit.committer_date)
-        print(f"Number of commits that envolve webguitests are: {len(sel_commits)}")
+        #print(f"Number of commits that envolve webguitests are: {len(sel_commits)}")
         print(f"First commit about a webguitest: {sorted_commits[0].committer_date}")
         return sorted_commits
 
     @staticmethod
-    def build_list_tests(tests):
-        list = []
-        for test in tests:
-            list.append(test.test_path)
-        return list
-
-    @staticmethod
-    def get_commits_by_filepath(repo_name,commit_sha,tests):
+    def get_commits_by_filepath(repo_name):
         JavascriptDataAnalyzer.enable_git_long_paths()
         path_folder_clone = f"../clone"
         cloner = Cloner(path_folder_clone)
-        cloner.clone_repository(repo_name,commit_sha)
+        # ritornare al commit presente nel db
+        
+        cloner.clone_repository(repo_name)
         original_name = repo_name.replace('/', '\\')
         new_name = repo_name.replace('/', '_')
+        file_analysis_name = new_name+".csv"
         print(f"rename dir: {original_name} -> {new_name}")
         JavascriptDataAnalyzer.rename_dir(original_name, new_name)
         cloned_repository = path_folder_clone + "/" + new_name
         repo = Repository(cloned_repository)
         sorted_all_commits = CommitAnalyzer.get_all_commits_sorted(repo,repo_name)
-        sorted_webgui_commits = CommitAnalyzer.get_all_guiweb_commits_sorted(cloned_repository,tests,repo_name)
-        print(sorted_all_commits[0].committer_date)
-        print(sorted_webgui_commits[0].committer_date)
-        new_row = {
-            sorted_all_commits[0].committer_date,
-            sorted_webgui_commits[0].committer_date
-        }
-        first_commit_df = pd.read_csv('/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/RQ1/adoption-gui.csv')
-        df_res = pd.concat([first_commit_df,pd.DataFrame([new_row])],ignore_index=True)
-        df_res.to_csv('/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/RQ1/adoption-gui.csv',index=False)
+
+        sorted_webgui_commits = CommitAnalyzer.get_all_guiweb_commits_sorted(cloned_repository,file_analysis_name,repo_name)
+
+        #salvare in un json
+
+        '''
         commits_to_analyze = CommitAnalyzer.get_commits_before_the_first_webgui(sorted_all_commits,sorted_webgui_commits[0])
         print(f'commit to analyze[{len(commits_to_analyze)}] {commits_to_analyze[0].committer_date} -> {commits_to_analyze[len(commits_to_analyze)-1].committer_date}')
         df = CommitAnalyzer.create_history_excel_file(repo_name,commits_to_analyze)
         return df
+        ''' 
 
     @staticmethod
-    def split_appcommit_guiweb_commit(df,paths_to_prioritize):
+    def split_appcommit_guiweb_commit(df, repo_name):
+        new_name = repo_name.replace('/', '_')
+        file_analysis_name = new_name + ".csv"
+
+        paths_to_prioritize = CommitAnalyzer.get_tests_path_main(file_analysis_name,repo_name,False)
         print(paths_to_prioritize)
         df_new = pd.DataFrame()
         df_new = pd.concat([df_new, df.iloc[0:1]], ignore_index=True)
@@ -296,6 +321,95 @@ class CommitAnalyzer:
     @staticmethod
     def has_extension(filepath):
         return any(filepath.endswith(ext) for ext in CommitAnalyzer.file_extensions_to_consider)
+
+    @staticmethod
+    def create_scatter_plot(df_app_filtered,df_gui,repo_name):
+        new_name = repo_name.replace('/', '_')
+        commits_analyzed_file = '../webguirepo_commit_analysis/'+new_name+ '/commits_analysis' + new_name
+        num_of_tests = len(df_gui)
+
+        print(f"df_app size: {df_app_filtered.shape}")
+        print(f"df_gui size: {df_gui.shape}")
+
+        # check if the first rows of df_gui and df_app are the same
+        if df_gui.iloc[0].equals(df_app_filtered.iloc[0]):
+            # remove the first row from df_app
+            df_app_filtered = df_app_filtered.iloc[1:]
+
+        # merge both df
+        merged_df = pd.concat([df_gui, df_app_filtered], ignore_index=True)
+
+        print(f"df_merged size: {merged_df.shape}")
+
+        x_coords = []
+        y_coords = []
+        colors = []
+
+        # color map
+        color_map_app = {
+            0: 'grey',
+            1: 'orange',
+            2: 'lightblue'
+        }
+
+        color_map_gui = {
+            0: 'yellow',
+            1: 'green',
+            2: 'blue'
+        }
+
+        for i in range(1, merged_df.shape[0]):
+            for j in range(1, merged_df.shape[1]):
+                value = merged_df.iloc[i, j]
+
+                if pd.isna(value) or value == '':
+                    continue
+
+                if i < num_of_tests:
+                    color_map = color_map_gui
+                else:
+                    color_map = color_map_app
+
+                x_coords.append(j)
+                y_coords.append(i)
+                if value == 'A':
+                    colors.append(color_map[0])
+                elif value == 'D':
+                    colors.append(color_map[1])
+                elif value.startswith('M') or value.startswith('R'):
+                    colors.append(color_map[2])
+                else:
+                    print(f'weird case: {value}')
+
+        if len(x_coords) == len(y_coords) == len(colors):
+            plt.scatter(x_coords, y_coords, c=colors, alpha=0.7)
+        else:
+            print("x, y and colors dimensions are not the same. check the input.")
+
+        plt.figure(figsize=(10, 6))
+        plt.scatter(x_coords, y_coords, c=colors, alpha=0.7)
+
+        plt.xticks(ticks=[0, merged_df.shape[1] / 2, merged_df.shape[1]],
+                   labels=[0, int(merged_df.shape[1] / 2), merged_df.shape[1]], rotation=45)
+        plt.yticks(ticks=[0, merged_df.shape[0] / 2, merged_df.shape[0]],
+                   labels=[0, int(merged_df.shape[0] / 2), merged_df.shape[0]])
+
+        legend = [
+            mpatches.Patch(color='grey', label='added-regular'),
+            mpatches.Patch(color='orange', label='delete-regular'),
+            mpatches.Patch(color='lightblue', label='edit-regular'),
+            mpatches.Patch(color='yellow', label='added-webguitest'),
+            mpatches.Patch(color='green', label='deleted-webguitest'),
+            mpatches.Patch(color='blue', label='edit-webguitest'),
+        ]
+
+        plt.legend(handles=legend, title="Color Legend")
+        plt.title('Change History')
+        plt.xlabel('Commit')
+        plt.ylabel('File Path')
+
+        plt.tight_layout()
+        plt.savefig(commits_analyzed_file+'.png')
 
     @staticmethod
     def get_gui_span(df):
@@ -507,21 +621,23 @@ class CommitAnalyzer:
             print(f"Data saved as Excel. {directory+name}.xlsx")
             df.to_excel(excel_filename, index=False, header=False)
 
+
     @staticmethod
     def analyze_projects(start,end):
         path_folder_clone = f"../clone"
-        repos = CommitAnalyzer.get_repo_with_number_of_test_lower_than_n(31)
-        for repo, e2e_repo in repos[start:end]:
-            print(f'{repo.name} and commit: {repo.last_commit} - {repo.last_commit_sha}')
-            repo_name = e2e_repo.repository_name
+        repos = CommitAnalyzer.get_e2e_repo_with_n_more_test(30)
+        for web_repo, e2e_repo in repos[start:end]:
+            repo_name = web_repo.name
             new_name = repo_name.replace('/', '_')
             directory = '../webguirepo_commit_analysis/' + new_name + "/"
             Path(directory).mkdir(parents=True, exist_ok=True)
             commits_analyzed_file = '../webguirepo_commit_analysis/' + new_name + '/commits_analysis' + new_name
             start_time = time.time() #Starting time
-            tests = CommitAnalyzer.build_list_tests(CommitAnalyzer.get_tests_by_repo_name(repo_name))
-            df = CommitAnalyzer.get_commits_by_filepath(repo_name,repo.last_commit_sha,tests)
-            df,only_gui = CommitAnalyzer.split_appcommit_guiweb_commit(df,repo_name,tests)
+            df = CommitAnalyzer.get_commits_by_filepath(repo_name)
+            '''
+            df,only_gui = CommitAnalyzer.split_appcommit_guiweb_commit(df,repo_name)
+            #create plot
+            CommitAnalyzer.create_scatter_plot(df,only_gui,repo_name)
             #perform metrics
             CommitAnalyzer.calculate_commit_test_metrics(df,only_gui,repo_name)
             #clear clone directory
@@ -533,12 +649,21 @@ class CommitAnalyzer:
             end_time = time.time()  # Tempo di fine
             execution_time = end_time - start_time  # Time taken
             print(f"Time taken : {execution_time:.6f}s")
+            '''
+
+
 
     @staticmethod
     def run_parallel_analysis():
         #range progetti da analizzare
         project_ranges = [
-            [0, 1]
+            [13, 30],
+            [30, 60],
+            [60,90],
+            [90, 120],
+            [120, 150],
+            [150, 180],
+            [180, 206]
         ]
         with concurrent.futures.ProcessPoolExecutor() as executor:
             futures = [executor.submit(CommitAnalyzer.analyze_projects, start, end) for start, end in project_ranges]
@@ -548,6 +673,8 @@ class CommitAnalyzer:
                     print("Analisi completata per un batch.")
                 except Exception as exc:
                     print(f"Si è verificato un errore durante l'analisi: {exc}")
+
+
 
 
 if __name__ == "__main__":

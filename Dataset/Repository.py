@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from Dataset.DBconnector import Base, Session, engine
 
-class Repository(Base):
+class RepositoryModel(Base):
     __tablename__ = "repository"
     name = Column(String(),primary_key=True)
     is_fork = Column(Boolean())
@@ -127,7 +127,7 @@ class Repository(Base):
     def update_processed_repository(self):
         local_session = Session(bind=engine)
         # self.is_processed = True
-        repository_to_update = local_session.query(Repository).filter(Repository.ID == self.ID).first()
+        repository_to_update = local_session.query(RepositoryModel).filter(RepositoryModel.ID == self.ID).first()
         repository_to_update.is_processed = True
         local_session.commit()
 
@@ -200,6 +200,34 @@ class NonTrivialRepo(Base):
         # Stampa i record
         for record in records:
             print(record.id, record.name, record.value)
+
+
+class GUITestingTestDetails(Base):
+    __tablename__ = "gui_testing_test_details"
+
+    repository_name = Column(String, ForeignKey("non_trivial_repository.name"), nullable=False)
+    test_path = Column(String, primary_key=True, nullable=False)
+    is_selenium_java = Column(Boolean())
+    is_selenium_js = Column(Boolean())
+    is_selenium_ts = Column(Boolean())
+    is_selenium_py = Column(Boolean())
+    is_playwright_java = Column(Boolean())
+    is_playwright_js = Column(Boolean())
+    is_playwright_ts = Column(Boolean())
+    is_playwright_py = Column(Boolean())
+    is_puppeteer_js = Column(Boolean())
+    is_puppeteer_ts = Column(Boolean())
+    is_puppeteer_py = Column(Boolean())
+    is_cypress_js = Column(Boolean())
+    is_cypress_ts = Column(Boolean())
+    with_junit = Column(Boolean())
+    with_testng = Column(Boolean())
+    with_jest = Column(Boolean())
+    with_mocha = Column(Boolean())
+    with_jasmine = Column(Boolean())
+    with_pytest = Column(Boolean())
+    with_unittest = Column(Boolean())
+    number_of_tests = Column(Integer())
 
 
 class PerformanceTestingTestDetails(Base):

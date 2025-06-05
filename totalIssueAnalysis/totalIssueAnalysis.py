@@ -1,19 +1,34 @@
+'''
 import csv
+'''
 import re
+'''
 from itertools import islice
 
 import pandas as pd
+'''
 import requests
 import json
 import  os
+'''
 import ast
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2
+'''
+
+from Dataset.DBconnector import Session, engine
+from Dataset.Repository import GUITestingRepoDetails
+
+import concurrent
+
+from pathlib import Path
+from environment import (
+    GITHUB_TOKEN,
+    PATH_TO_ISSUES_DOWNLOAD
+)
 
 class TotalIssue:
-
-
-
+    '''
     flaky_slow_labels = [
         'flaky-e2e',
         'slow-e2e',
@@ -82,15 +97,16 @@ class TotalIssue:
     in_closed_ga_e2e = 84
     take_closed_ga = 6352
     take_closed_ga_e2e = 52
-
-    token = "Bearer ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    '''
 
     # Impostazioni della richiesta
     headers = {
-        "Authorization": f"{token}",
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
 
+    
+    '''
     @staticmethod
     def get_all_issues(state,repo_name):
         issues_url = f"https://api.github.com/repos/{repo_name}/issues"
@@ -116,10 +132,156 @@ class TotalIssue:
                 break
 
         return all_issues
+        '''
 
+    @staticmethod
+    def get_all_issues(state, repo_name):
+        import re
+        
+        issues_url = f"https://api.github.com/repos/{repo_name}/issues"
+        all_issues = []
+        next_url = None
+        #page = 1  # Keep for logging purposes
+        
+        while True:
+            #print(f'page:{page}')
+            
+            if next_url:
+                # Use the complete URL from the Link header
+                response = requests.get(next_url, headers=TotalIssue.headers)
+            else:
+                # First request
+                params = {
+                    "state": state,  # Stato delle issue
+                    "per_page": 100,  # Numero di issue per pagina (max 100)
+                }
+                response = requests.get(issues_url, headers=TotalIssue.headers, params=params)
+            
+            if response.status_code == 200:
+                issues = response.json()
+                if not issues:  # Se non ci sono più issue, interrompi il ciclo
+                    break
+                all_issues.extend(issues)  # Aggiungi le issue trovate alla lista
+                
+                # Extract next URL from Link header
+                link_header = response.headers.get('Link', '')
+                
+                if 'rel="next"' not in link_header:
+                    break
+                    
+                # Extract the complete next URL
+                next_match = re.search(r'<([^>]+)>;\s*rel="next"', link_header)
+                if next_match:
+                    next_url = next_match.group(1)
+                    #page += 1  # Increment for logging
+                else:
+                    break
+            else:
+                print(f"Errore {response.status_code}: {response.text}")
+                raise Exception(f"Error fetching issues for {repo_name}: {response.status_code} - {response.text}")
+
+        return all_issues
+    '''
+    @staticmethod
+    def get_all_issues(state,repo_name):
+
+        url = "https://api.github.com/graphql"
+        token = TotalIssue.token.split(" ")[1]  # Remove 'Bearer '
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        owner, repo = repo_name.split('/')
+        issues = []
+        has_next_page = True
+        after = None
+
+        while has_next_page:
+            query = """
+            query($owner: String!, $repo: String!, $state: [IssueState!], $after: String) {
+              repository(owner: $owner, name: $repo) {
+                issues(first: 100, states: $state, after: $after) {
+                  pageInfo {
+                    hasNextPage
+                    endCursor
+                  }
+                  nodes {
+                    id
+                    number
+                    title
+                    body
+                    state
+                    stateReason
+                    createdAt
+                    closedAt
+                    author { login }
+                    labels(first: 20) { nodes { name } }
+                    timelineItems(last: 1, itemTypes: [CLOSED_EVENT]) {
+                      nodes {
+                        ... on ClosedEvent {
+                          actor {
+                            login
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """
+            variables = {
+                "owner": owner,
+                "repo": repo,
+                "state": [state.upper()],
+                "after": after
+            }
+            response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
+            data = response.json()
+            if 'errors' in data:
+                raise Exception(f"Error fetching issues for {repo_name}: {data['errors']}")
+            
+            repo_data = data['data']['repository']['issues']
+            for issue in repo_data['nodes']:
+                # Post-process to match REST API output
+                # Map 'author' to 'user', 'stateReason' to 'state_reason', 'labels' to flat list
+                if 'author' in issue:
+                    issue['user'] = {'login': issue['author']['login']} if issue['author'] else None
+                    del issue['author']
+                if 'stateReason' in issue:
+                    issue['state_reason'] = issue['stateReason']
+                    del issue['stateReason']
+                if 'labels' in issue and 'nodes' in issue['labels']:
+                    # REST API returns a list of dicts with 'name' key
+                    issue['labels'] = [{'name': l['name']} for l in issue['labels']['nodes']]
+                # Map closed_by from timelineItems
+                closed_by_login = None
+                timeline = issue.get('timelineItems', {}).get('nodes', [])
+                if timeline and timeline[0] and 'actor' in timeline[0] and timeline[0]['actor']:
+                    closed_by_login = {'login': timeline[0]['actor']['login']}
+                issue['closed_by'] = closed_by_login
+                if 'timelineItems' in issue:
+                    del issue['timelineItems']
+                if 'createdAt' in issue:
+                    issue['created_at'] = issue['createdAt']
+                    del issue['createdAt']
+                if 'closedAt' in issue:
+                    issue['closed_at'] = issue['closedAt']
+                    del issue['closedAt']
+                issues.append(issue)
+            has_next_page = repo_data['pageInfo']['hasNextPage']
+            after = repo_data['pageInfo']['endCursor']
+        return issues
+    '''
 
     @staticmethod
     def get_number_of_open_closed_issues(repo_name,save_flag):
+        out_file_name = Path(PATH_TO_ISSUES_DOWNLOAD) / f"{repo_name.replace('/', '_', 1)}_all_issues.json"
+
+        if out_file_name.exists():
+            print(f"File '{out_file_name}' already exists. Skipping download.")
+            return
+
         # Ottenere tutte le issue aperte e chiuse
         open_issues = TotalIssue.get_all_issues("open",repo_name)
         closed_issues = TotalIssue.get_all_issues("closed",repo_name)
@@ -129,16 +291,14 @@ class TotalIssue:
             "open": open_issues,
             "closed": closed_issues
         }
-
-        # Salvare le issue in un file JSON
-        if save_flag:
-            out_file_name=f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/totalIssueAnalysis/webrepo_issues_analysis/webrepo_issues_analysis/'+repo_name.replace('/','_',1)+"_all_issues.json"
-            with open(out_file_name,'w') as json_file:
-                json.dump(all_issues, json_file, indent=4)  # Indentazione per migliorare la leggibilità
-            #print(f"{len(open_issues)} issue aperte e {len(closed_issues)} issue chiuse salvate in 'all_issues.json'.")
-        github_actions_issues = TotalIssue.check_github_actions_issues(open_issues,closed_issues)
-        return len(open_issues),len(closed_issues),len(github_actions_issues['open']),len(github_actions_issues['closed'])
-
+        
+        with open(out_file_name,'w') as json_file:
+            json.dump(all_issues, json_file, indent=4)  # Indentazione per migliorare la leggibilità
+            print(f"{len(open_issues)} issue aperte e {len(closed_issues)} issue chiuse salvate in '{out_file_name}'.")
+        
+        #github_actions_issues = TotalIssue.check_github_actions_issues(open_issues,closed_issues)
+        #return len(open_issues),len(closed_issues),len(github_actions_issues['open']),len(github_actions_issues['closed'])
+    '''
     @staticmethod
     def check_github_actions_issues(open_issues, closed_issues):
         # Carica le issue dal file JSON
@@ -161,33 +321,48 @@ class TotalIssue:
                 github_actions_issues['closed'].append(issue)
 
         return github_actions_issues
-
+    '''
+    @staticmethod
+    def get_repo_with_number_of_test_lower_than_n(n):
+        try:
+            session = Session(bind=engine)
+            print("Connection successful!")
+            records = session.query(GUITestingRepoDetails).filter(
+                GUITestingRepoDetails.number_of_tests <= n
+            )
+            return records.all()
+        except Exception as e:
+            print(f"Error connecting to the database: {e}")
+        finally:
+            session.close()  # Ensure the session is closed after use
 
     @staticmethod
-    def calculate_number_of_issue(start,end):
-        output_file = f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/totalIssueAnalysis/total_issues_analysis_2.xlsx'
-        df_res = pd.read_excel(output_file)
-        df = pd.read_excel(f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/RQ2/rq2_data.xlsx')
-        for index, row in islice(df.iterrows(),start,end):
-            repo_name = row.iloc[0]
-            num_of_test= row.iloc[11]
+    def calculate_number_of_issue(start, end):
+        #output_file = f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/totalIssueAnalysis/total_issues_analysis_2.xlsx'
+        #df_res = pd.read_excel(output_file)
+        #df = pd.read_excel(f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/RQ2/rq2_data.xlsx')
+        missed_repo = TotalIssue.get_repo_with_number_of_test_lower_than_n(30)
+        for repo in missed_repo[start:end]:
+            repo_name = repo.repository_name
+            num_of_test= repo.number_of_tests
             print(f' sto processando {repo_name} con num_of_test:{num_of_test}')
             save_file_issue = num_of_test>0
-            open_issues,closed_issues,action_open_issue,action_closed_issues=TotalIssue.get_number_of_open_closed_issues(repo_name,save_file_issue)
-            print(f'open-issues:{open_issues} - closed-issues:{closed_issues} act-open: {action_open_issue} act-close :{action_closed_issues}')
-            new_row = {
-                'repo': repo_name,
-                'open' : open_issues,
-                'closed': closed_issues,
-                'act-open':action_open_issue,
-                'act-closed': action_closed_issues
-            }
-            print(new_row)
+            #open_issues,closed_issues,action_open_issue,action_closed_issues=
+            TotalIssue.get_number_of_open_closed_issues(repo_name,save_file_issue)
+            #print(f'open-issues:{open_issues} - closed-issues:{closed_issues} act-open: {action_open_issue} act-close :{action_closed_issues}')
+            #new_row = {
+            #    'repo': repo_name,
+            #    'open' : open_issues,
+            #    'closed': closed_issues,
+            #    'act-open':action_open_issue,
+            #    'act-closed': action_closed_issues
+            #}
+            #print(new_row)
             #new_row_df = pd.DataFrame([new_row])
             #df_res = pd.concat([df_res, new_row_df], ignore_index=True)
             #df_res.to_excel(output_file,index=False)
 
-
+    '''
     @staticmethod
     def save_rq2_new_total_issues():
         rq2_data = pd.read_excel(f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/RQ2/rq2_data_updated.xlsx')
@@ -254,7 +429,6 @@ class TotalIssue:
             if issue is not None:
                 if TotalIssue.is_automated(issue,0):
                     list.append(issue)
-
         return list
 
     @staticmethod
@@ -632,9 +806,6 @@ class TotalIssue:
         plt.show()
 
 
-
-
-
     @staticmethod
     def issues_analysis(repo,issues,type):
         res = []
@@ -712,15 +883,26 @@ class TotalIssue:
             force_ascii=False  # Per mantenere eventuali caratteri speciali
         )
 
+    '''
+
+    @staticmethod
+    def run_parallel_analysis():
+        project_ranges =[
+            [0,50],
+            [50,100],
+            [100,150],
+            [150,200],
+            [200,250],
+            [250,300],
+        ]
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = [executor.submit(TotalIssue.calculate_number_of_issue, start, end) for start, end in project_ranges]
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()  # Recupera il risultato del processo
+                    print("Analisi completata per un batch.")
+                except Exception as exc:
+                    print(f"Si è verificato un errore durante l'analisi: {exc}")
+
 if __name__ == "__main__":
-    #TotalIssue.fill_total_issue_perf()
-    #TotalIssue.calculate_number_of_issue(2529,5232)
-    #TotalIssue.load_json_files_from_directory()
-    #TotalIssue.flaky_slow_analysis()
-    #TotalIssue.list_all_users()
-    #TotalIssue.save_rq2_new_total_issues()
-    #TotalIssue.create_csv_file_res()
-    # #TotalIssue.missed_repo(f'/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/totalIssueAnalysis/webrepo_issues_analysis/webrepo_issues_analysis')
-    #TotalIssue.get_all_labels_from_issues()
-    #TotalIssue.venn_open_issue_label()
-    TotalIssue.ceate_all_issue_analisys_life()
+    TotalIssue.run_parallel_analysis()

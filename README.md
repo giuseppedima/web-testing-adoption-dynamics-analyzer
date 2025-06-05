@@ -1,3 +1,4 @@
+<!---
 ### E2E-Miner
 
 E2E-Miner is a tool for researchers that automates the mining of Repository Software.
@@ -21,4 +22,32 @@ Il will create a RepositoryDataset.db with all informations in.
 After that, you have to define the characteristic of Repositories to analyze in main.py and then run the scripts.
 
 To see the DataSet with all you information install DB browser for SQLite (https://sqlitebrowser.org/).
-
+-->
+1. Download the dataset
+```bash
+wget https://zenodo.org/records/14988988/files/E2EGit.db -O resources/E2EGit.db
+```
+2. Create a .env file following the example in .env.example
+```bash
+cp resources/.env.example resources/.env
+```
+3. (optional, but recommended) Create a virtual environment
+```bash
+python3 -m venv .venv
+```
+and activate it, for example on linux
+```bash
+source .venv/bin/activate
+```
+When you are done, you can deactivate it with
+```bash
+deactivate
+```
+4. Install the dependencies
+```bash
+pip install -r requirements.txt
+```
+5. If you want to download issues run totalIssueAnalysis
+```bash
+python3 -u -m totalIssueAnalysis.totalIssueAnalysis >totalIssueAnalysis/log.log 2>&1
+```

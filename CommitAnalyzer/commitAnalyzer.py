@@ -1,4 +1,5 @@
 import concurrent.futures
+'''
 import errno
 import gc
 import os.path
@@ -6,21 +7,27 @@ import shutil
 import stat
 import time
 import warnings
+'''
 from pathlib import Path
+'''
 from pandas.errors import PerformanceWarning
 
 from Dataset.Repository import GUITestingRepoDetails,RepositoryModel, GUITestingTestDetails
 from ProjectAnalyzer.JSTS.JavascriptDataAnalyzer import JavascriptDataAnalyzer
 import os.path
+'''
 import pandas as pd
-from pydriller import Repository, ModificationType
-from datetime import  datetime
+from pydriller import Repository
+from datetime import datetime
+'''
+from pydriller import ModificationType
 from Dataset.DBconnector import Session, engine
+'''
 from RepositoryAnalyzer.RepositoryCloner import Cloner
 
 
 class CommitAnalyzer:
-
+    '''
     warnings.simplefilter(action='ignore', category=PerformanceWarning)
     java_analysis_folder = '../data/java_test_analysis'
     js_ts_analysis_folder = '../data/js_ts_test_analysis'
@@ -207,7 +214,6 @@ class CommitAnalyzer:
             if all_commits[i].hash == first_guiweb_commit.hash:
                 return  all_commits[previous_commit:]
             previous_commit = i
-
     @staticmethod
     def get_all_commits_sorted(repo,repo_name):
         all_commits = list(repo.traverse_commits())
@@ -216,7 +222,6 @@ class CommitAnalyzer:
         print(f"First commit was : {sorted_non_merge_commits[0].committer_date}")
         print(f"The repo {repo_name} has : {len(all_commits)} commits overall!")
         return sorted_non_merge_commits
-
     @staticmethod
     def get_all_guiweb_commits_sorted(repo_path,tests,repo_name):
         prefix = '/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/clone'
@@ -338,12 +343,10 @@ class CommitAnalyzer:
                     spans.append(current_span.copy())
                 current_span.clear()
         return spans, commits
-
     @staticmethod
     def extract_date(commit_str):
         date_str = commit_str.split('(')[1].split(')')[0]  # Estrae la parte della data
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")  # Converte la stringa in oggetto datetime
-
     @staticmethod
     def calculate_number_of_commits_between_two_dates(current_blob_commits, commits):
         first_data = CommitAnalyzer.extract_date(current_blob_commits[0])
@@ -483,18 +486,18 @@ class CommitAnalyzer:
         except Exception as e:
             print(f"Error during the folder {directory_path} deletion: {e}")
 
-        '''
-        for item in os.listdir(directory_path):
-            item_path = os.path.join(directory_path, item)
-            try:
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path, ignore_errors=False, onerror=CommitAnalyzer.handle_remove_readonly)
-                else:
-                    os.remove(item_path)
-            except Exception as e:
-                print(f"Error removing {item_path}: {e}")
-        print('Folder succesfully cleaned!')
-        '''
+    
+        # for item in os.listdir(directory_path):
+        #     item_path = os.path.join(directory_path, item)
+        #     try:
+        #         if os.path.isdir(item_path):
+        #             shutil.rmtree(item_path, ignore_errors=False, onerror=CommitAnalyzer.handle_remove_readonly)
+        #         else:
+        #             os.remove(item_path)
+        #     except Exception as e:
+        #         print(f"Error removing {item_path}: {e}")
+        # print('Folder succesfully cleaned!')
+
 
     @staticmethod
     def save_df(df,directory,name):
@@ -506,11 +509,138 @@ class CommitAnalyzer:
             excel_filename= directory+name+".xlsx"
             print(f"Data saved as Excel. {directory+name}.xlsx")
             df.to_excel(excel_filename, index=False, header=False)
+    '''	
+
+    
+    @staticmethod
+    def get_repos_with_first_gui_testing_commit():
+        input_file = Path(__file__).resolve().parent.parent / 'resources' / 'first_commit.xlsx'
+        df = pd.read_excel(input_file, header=None)
+        found_repos = []
+        for row in df.itertuples(index=False):
+            repo_name, commit_date = row[0], row[1]
+            if pd.notna(repo_name) and pd.notna(commit_date):
+                found_repos.append([repo_name.replace("_","/"), commit_date])
+        return found_repos
 
     @staticmethod
-    def analyze_projects(start,end):
-        path_folder_clone = f"../clone"
-        repos = CommitAnalyzer.get_repo_with_number_of_test_lower_than_n(31)
+    def get_repos_with_first_commit_that_introduces_a_framework():
+        input_file = Path(__file__).resolve().parent.parent / 'resources' / 'frame_deps.xlsx'
+        df = pd.read_excel(input_file, header=None)
+        found_repos = []
+        for row in df.itertuples(index=False):
+            key = row[0]
+            values = []
+            for col in row[2:]:
+                if pd.notna(col):
+                    try:
+                        timestamp_part, frameworks_part = col.split('] : ')
+                        timestamp_str = timestamp_part.strip('[')
+                        timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                        frameworks = [fw for fw in frameworks_part.strip(';').split(';') if fw]
+                        values.append({'timestamp': timestamp, 'frameworks': frameworks})
+                    except Exception as e:
+                        print(f"Error parsing value '{col}': {e}")
+                else:
+                    break
+            if values:
+                found_repos.append({key: values})
+        return found_repos
+
+    @staticmethod
+    def execute_in_parallel(tasks, threads=10):
+
+        futures = []
+        with concurrent.futures.ProcessPoolExecutor(max_workers=threads) as executor:
+            for task, params in tasks:
+                futures.append(executor.submit(task, *params))
+
+        results = []
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()  # Retrieve the result of the process
+            results.append(result)
+
+        return results
+
+    @staticmethod
+    def get_previous_n_commits_starting_from_date(repository, start_date, n):
+        
+        cloner = Cloner()
+        try:
+            print(f"Cloning repository: {repository}")
+            path = cloner.clone_repository(repository)
+            print(f"Repository {repository} cloned successfully.")
+
+            repo = Repository(path)
+    
+            commits = []
+            
+            for commit in repo.traverse_commits():
+                # return n+1 commits
+                if n >= 0 and commit.committer_date.replace(tzinfo=None) <= start_date:
+                    commits.append(commit)
+                    n -= 1
+
+            # commits = sorted(commits, key=lambda c: c.committer_date, reverse=True)
+            if not commits:
+                raise ValueError(f"No commits found for repository {repository} at date {start_date}.")
+
+            return commits
+
+        except Exception as e:
+            print(f"Error getting commits from repository {repository}: {e}")
+
+    @staticmethod
+    def migration_analysis():
+   
+        repos = CommitAnalyzer.get_repos_with_first_commit_that_introduces_a_framework()
+
+        tasks=[]
+        for repo in repos:
+            for key, values in repo.items():
+                for value in values:
+                    print(f"Processing repository: {key} with commit date: {value['timestamp']}, frameworks: {value['frameworks']}")
+                    tasks.append((CommitAnalyzer.get_previous_n_commits_starting_from_date, (key, value["timestamp"], 10)))
+
+        all_commits = CommitAnalyzer.execute_in_parallel(
+            tasks=tasks,
+            threads=10
+        )
+        for commits in all_commits:
+            if commits:
+                for commit in commits:
+                    print(f"Commit: {commit.hash} on {commit.committer_date}")
+            else:
+                print("No commits found for this repository.")     
+        #TODO: store the results in a file
+        #TODO: cleanup clone directories
+
+    @staticmethod
+    def adoption_analysis():
+
+        repos = CommitAnalyzer.get_repos_with_first_gui_testing_commit()
+
+        tasks=[]
+        for repo, commit_date in repos:
+            print(f"Processing repository: {repo} with first GUI testing commit date: {commit_date}")
+            tasks.append((CommitAnalyzer.get_previous_n_commits_starting_from_date, (repo, commit_date, 10)))
+
+
+        all_commits = CommitAnalyzer.execute_in_parallel(
+            tasks=tasks,
+            threads=10
+        )
+        for commits in all_commits:
+            if commits:
+                for commit in commits:
+                    print(f"Commit: {commit.hash} on {commit.committer_date}")
+            else:
+                print("No commits found for this repository.")
+
+        #TODO: store the results in a file
+        #TODO: cleanup clone directories
+
+        '''
         for repo, e2e_repo in repos[start:end]:
             print(f'{repo.name} and commit: {repo.last_commit} - {repo.last_commit_sha}')
             repo_name = e2e_repo.repository_name
@@ -533,7 +663,8 @@ class CommitAnalyzer:
             end_time = time.time()  # Tempo di fine
             execution_time = end_time - start_time  # Time taken
             print(f"Time taken : {execution_time:.6f}s")
-
+        '''
+    '''
     @staticmethod
     def run_parallel_analysis():
         #range progetti da analizzare
@@ -548,7 +679,9 @@ class CommitAnalyzer:
                     print("Analisi completata per un batch.")
                 except Exception as exc:
                     print(f"Si è verificato un errore durante l'analisi: {exc}")
-
+    '''
 
 if __name__ == "__main__":
-    CommitAnalyzer.run_parallel_analysis()
+    Cloner.enable_git_long_paths()
+    # CommitAnalyzer.adoption_analysis()
+    CommitAnalyzer.migration_analysis()

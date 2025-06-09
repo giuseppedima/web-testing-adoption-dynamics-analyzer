@@ -20,3 +20,7 @@ if not GITHUB_TOKEN:
 PATH_TO_ISSUES_DOWNLOAD = os.environ.get('PATH_TO_ISSUES_DOWNLOAD')
 if not PATH_TO_ISSUES_DOWNLOAD:
     raise Exception('PATH_TO_ISSUES_DOWNLOAD is not set in the .env file')
+
+PATH_TO_CLONE= os.environ.get('PATH_TO_CLONE')
+if not PATH_TO_CLONE:
+    raise Exception('PATH_TO_CLONE is not set in the .env file')

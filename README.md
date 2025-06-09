@@ -51,3 +51,7 @@ pip install -r requirements.txt
 ```bash
 python3 -u -m totalIssueAnalysis.totalIssueAnalysis >totalIssueAnalysis/log.log 2>&1
 ```
+If you want to extract commits run
+```bash
+python3 -u -m CommitAnalyzer.commitAnalyzer >CommitAnalyzer/log.log 2>&1
+```

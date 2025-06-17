@@ -1,6 +1,4 @@
-'''
 import csv
-'''
 import re
 '''
 from itertools import islice
@@ -886,6 +884,28 @@ class TotalIssue:
     '''
 
     @staticmethod
+    def export_issues_summary_to_csv():
+
+        csv_file = Path(PATH_TO_ISSUES_DOWNLOAD).parent / "issues_summary_repos_lower_than_30.csv"
+        if not csv_file.exists():
+            with open(csv_file, 'w', newline='', encoding='utf-8') as csv_out:
+                writer = csv.writer(csv_out)
+                writer.writerow(['repo_name', 'open_issues', 'closed_issues', 'total_issues'])
+
+        for file_path in Path(PATH_TO_ISSUES_DOWNLOAD).glob("*_all_issues.json"):
+            with open(file_path, 'r', encoding='utf-8') as json_file:
+                data = json.load(json_file)
+                
+                repo_name = file_path.stem.replace('_all_issues', '')
+                open_issues = len(data['open'])
+                closed_issues = len(data['closed'])
+
+                with open(csv_file, 'a', newline='', encoding='utf-8') as csv_out:
+                    writer = csv.writer(csv_out)
+                    writer.writerow([repo_name, open_issues, closed_issues, open_issues + closed_issues])
+
+
+    @staticmethod
     def run_parallel_analysis():
         project_ranges =[
             [0,50],
@@ -905,4 +925,5 @@ class TotalIssue:
                     print(f"Si è verificato un errore durante l'analisi: {exc}")
 
 if __name__ == "__main__":
-    TotalIssue.run_parallel_analysis()
+    # TotalIssue.run_parallel_analysis()
+    TotalIssue.export_issues_summary_to_csv()

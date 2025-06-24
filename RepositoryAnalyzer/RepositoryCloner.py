@@ -68,7 +68,7 @@ class Cloner:
                         f"Superato il numero massimo di tentativi ({self.max_retries}) per clonare la repository '{repo_url}'")
                     print(
                         f"Superato il numero massimo di tentativi ({self.max_retries}) per clonare la repository '{repo_url}'")
-                    return repo_path
+                    raise e
                 else:
                     logging.info(
                         f"Riprovo a clonare la repository '{repo_url}' (tentativo {retries + 1}/{self.max_retries})")

@@ -160,4 +160,9 @@ class TotalIssue:
 
 if __name__ == "__main__":
     # TotalIssue.run_parallel_analysis()
-    TotalIssue.export_issues_summary_to_csv()
+    # TotalIssue.export_issues_summary_to_csv()
+
+    #missed repos
+    TotalIssue.get_number_of_open_closed_issues("wandb/weave",True)
+    TotalIssue.get_number_of_open_closed_issues("github/docs",True)
+    TotalIssue.get_number_of_open_closed_issues("codeinwp/neve",True)

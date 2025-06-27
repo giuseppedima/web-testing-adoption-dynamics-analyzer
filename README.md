@@ -55,3 +55,11 @@ If you want to extract commits run
 ```bash
 python3 -u -m CommitAnalyzer.commitAnalyzer >CommitAnalyzer/log.log 2>&1
 ```
+If you want to filter commits run
+```bash
+python3 -u -m CommitFilterer.commitFilterer >CommitFilterer/log.log 2>&1
+```
+If you want to filter issues run
+```bash
+python3 -u -m IssueFilterer.issueFilterer >IssueFilterer/log.log 2>&1
+```

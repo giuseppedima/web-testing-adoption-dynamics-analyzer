@@ -6,7 +6,6 @@ from datetime import datetime
 from RepositoryAnalyzer.RepositoryCloner import Cloner
 import json
 
-
 class CommitAnalyzer:
     
     @staticmethod
@@ -122,6 +121,10 @@ class CommitAnalyzer:
         for idx, commits in enumerate(all_commits):
             repo_name = repo_keys[idx]
             frameworks = frameworks_list[idx]
+            if not commits:
+                print(f"No commits found for repository {repo_name}.")
+                continue
+
             migration_commit = commits[0] if commits else None
             previous_commits = commits[1:] if commits else []
 
@@ -170,7 +173,7 @@ class CommitAnalyzer:
         results = []
         for idx, commits in enumerate(all_commits):
             if commits:
-                repo_name, adoption_date = repos[idx]
+                repo_name, _ = repos[idx]
                 adoption_commit = commits[0]
                 previous_commits = commits[1:]
                 results.append({

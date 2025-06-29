@@ -53,7 +53,8 @@ python3 -u -m totalIssueAnalysis.totalIssueAnalysis >totalIssueAnalysis/log.log 
 ```
 If you want to extract commits run
 ```bash
-python3 -u -m CommitAnalyzer.commitAnalyzer >CommitAnalyzer/log.log 2>&1
+python3 -u -m CommitAnalyzer.adoptionCommitAnalyzer >CommitAnalyzer/adoptionCommitAnalyzer.log 2>&1
+python3 -u -m CommitAnalyzer.migrationCommitAnalyzer >CommitAnalyzer/migrationCommitAnalyzer.log 2>&1
 ```
 If you want to filter commits run
 ```bash
@@ -61,5 +62,6 @@ python3 -u -m CommitFilterer.commitFilterer >CommitFilterer/log.log 2>&1
 ```
 If you want to filter issues run
 ```bash
-python3 -u -m IssueFilterer.issueFilterer >IssueFilterer/log.log 2>&1
+python3 -u -m IssueFilterer.adoptionIssueFilterer >IssueFilterer/adoptionIssueFilterer.log 2>&1
+python3 -u -m IssueFilterer.migrationIssueFilterer >IssueFilterer/migrationIssueFilterer.log 2>&1
 ```

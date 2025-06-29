@@ -1,9 +1,6 @@
-from datetime import timedelta
 from pathlib import Path
 import json
-from CommitAnalyzer.commitAnalyzer import CommitAnalyzer
-from CommitFilterer.commitFilterer import CommitFilterer
-from datetime import datetime, timezone
+from datetime import datetime
 import re
 
 class IssueFilterer:
@@ -25,11 +22,11 @@ class IssueFilterer:
                         if start_date <= created_at <= end_date:
                             append = True
                         updated_at = datetime.fromisoformat(issue['updated_at'].replace('Z', '+00:00')) if issue['updated_at'] else None
-                        if start_date < updated_at <= end_date:
+                        if start_date <= updated_at <= end_date:
                             append = True
                         if issue['closed_at']:
                             closed_at = datetime.fromisoformat(issue['closed_at'].replace('Z', '+00:00'))
-                            if closed_at and start_date < closed_at <= end_date:
+                            if closed_at and start_date <= closed_at <= end_date:
                                 append = True
 
                         title_msg = issue['title'].lower() if issue['title'] else ''
@@ -54,88 +51,3 @@ class IssueFilterer:
         
         return filtered_issues
 
-    @staticmethod
-    def adoption_analysis():
-        repos = CommitAnalyzer.get_repos_with_adoption_commit()
-
-        tasks = []
-        for repo, commit_date in repos:
-            commit_date = commit_date.replace(hour=23, minute=59, second=59, microsecond=59).replace(tzinfo=timezone.utc)
-            tasks.append((IssueFilterer.filter_issues, (repo, commit_date-timedelta(days=10), commit_date, CommitFilterer.keywords['adoption'])))
-
-        all_issues = CommitAnalyzer.execute_in_parallel(
-            tasks=tasks,
-            workers=100
-        )
-
-        results = []
-        for idx, issues in enumerate(all_issues):
-            # Aggiungi solo se almeno una delle due liste non è vuota
-            if issues and (issues["open"] or issues["closed"]):
-                repo_name, _ = repos[idx]
-                results.append({repo_name: issues})
-            else:
-                print(f"No issues found for repository {repos[idx][0]} around adoption date {repos[idx][1]} matching keywords.")
-        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_issues_filtered.json'
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=4, ensure_ascii=False)
-
-    @staticmethod
-    def migration_analysis():
-        repos = CommitAnalyzer.get_repos_with_migration_commit()
-
-        tasks = []
-        migration_info = []
-        repo_keys = []
-        frameworks_list = []
-
-        # Prepara le informazioni per ogni task
-        for repo in repos:
-            for key, values in repo.items():
-                for value in values:
-                    commit_date = value["timestamp"].replace(hour=23, minute=59, second=59, microsecond=59).replace(tzinfo=timezone.utc)
-                    tasks.append((IssueFilterer.filter_issues, (key, commit_date-timedelta(days=10), commit_date, CommitFilterer.keywords['migration'])))
-                    repo_keys.append(key)
-                    frameworks_list.append(value['frameworks'])
-                    migration_info.append({
-                        "repo": key,
-                        "timestamp": value["timestamp"],
-                        "frameworks": value["frameworks"]
-                    })
-
-        all_issues = CommitAnalyzer.execute_in_parallel(
-            tasks=tasks,
-            workers=100
-        )
-
-        # Costruisci la struttura richiesta
-        results = {}
-        for idx, issues in enumerate(all_issues):
-            repo_name = repo_keys[idx]
-            frameworks = frameworks_list[idx]
-            if not issues:
-                print(f"No issues found for repository {repo_name}.")
-                continue
-
-            migration_entry = {
-                'frameworks': frameworks,
-                'issues': {
-                    'open': issues['open'] if issues else [],
-                    'closed': issues['closed'] if issues else []
-                },
-            }
-
-            if repo_name not in results:
-                results[repo_name] = []
-            results[repo_name].append(migration_entry)
-
-        # Salva i risultati in un file JSON
-        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_issues_filtered.json'
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=4, ensure_ascii=False)
-
-
-
-if __name__ == "__main__":
-    IssueFilterer.adoption_analysis()
-    IssueFilterer.migration_analysis()

@@ -92,26 +92,25 @@ class CommitFilterer:
     @staticmethod
     def adoption_filter():
 
-        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption.json'
+        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_commits.json'
         with open(input_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         filtered_data = {}
-        for entry in data:
-            repo = entry['repo']
+        for repo, entry in data.items():
             matched_commits = []
 
             # Controllo case-insensitive
-            adoption_msg = entry['adoption']['message'].lower()
+            adoption_msg = entry['adoption_commit']['message'].lower()
             matched_keywords = [
                 keyword for keyword in CommitFilterer.keywords['adoption']
                 if re.search(rf'\b{re.escape(keyword.lower())}\b', adoption_msg)
             ]
             if matched_keywords:
-                entry['adoption']['matches'] = matched_keywords
-                matched_commits.append(entry['adoption'])
+                entry['adoption_commit']['matches'] = matched_keywords
+                matched_commits.append(entry['adoption_commit'])
 
-            for commit in entry['previous']:
+            for commit in entry['previous_commits']:
                 commit_msg = commit['message'].lower()
                 matched_keywords = [
                     keyword for keyword in CommitFilterer.keywords['adoption']
@@ -125,33 +124,34 @@ class CommitFilterer:
                 filtered_data[repo] = matched_commits
 
         # Salva i dati filtrati su un nuovo file JSON
-        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_filtered.json'
+        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_commits_filtered.json'
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(filtered_data, f, indent=4, ensure_ascii=False)
+            json.dump(filtered_data, f, indent=4, ensure_ascii=False, sort_keys=True)
 
     @staticmethod
     def migration_filter():
 
-        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration.json'
+        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_commits.json'
         with open(input_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         filtered_data = {}
         for repo, migrations in data.items():
+
             matched_commits = []
 
             for migration in migrations:
 
-                migration_msg = migration['migration']['message'].lower()
+                migration_msg = migration['migration_commit']['message'].lower()
                 matched_keywords = [
                     keyword for keyword in CommitFilterer.keywords['migration']
                     if re.search(rf'\b{re.escape(keyword.lower())}\b', migration_msg)
                 ]
                 if matched_keywords:
-                    migration['migration']['matches'] = matched_keywords
-                    matched_commits.append(migration['migration'])
+                    migration['migration_commit']['matches'] = matched_keywords
+                    matched_commits.append(migration['migration_commit'])
 
-                for commit in migration['previous']:
+                for commit in migration['previous_commits']:
                     commit_msg = commit['message'].lower()
                     matched_keywords = [
                         keyword for keyword in CommitFilterer.keywords['migration']
@@ -159,21 +159,21 @@ class CommitFilterer:
                     ]
                     if matched_keywords:
                         commit['matches'] = matched_keywords
-                        commit['frameworks'] = migration['migration']['frameworks']
+                        commit['frameworks_involved'] = migration['migration_commit']['frameworks_involved']
                         matched_commits.append(commit)
 
             if matched_commits:  # Solo se ci sono match aggiungi il repo
                 filtered_data[repo] = matched_commits
 
         # Salva i dati filtrati su un nuovo file JSON
-        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_filtered.json'
+        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_commits_filtered.json'
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(filtered_data, f, indent=4, ensure_ascii=False)
+            json.dump(filtered_data, f, indent=4, ensure_ascii=False, sort_keys=True)
 
     
     @staticmethod
     def adoption_summary():
-        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_filtered.json'
+        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_commits_filtered.json'
         with open(input_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
@@ -186,14 +186,14 @@ class CommitFilterer:
                     if keyword_lower in [k.lower() for k in commit['matches']]:
                         count += 1
                         print(f"Found match in repo '{repo}' for keyword '{keyword}': {commit['message']}")
-            summary[keyword] = count
-        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_summary.json'
+            summary[keyword_lower] = count
+        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'adoption_commits_summary.json'
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(summary, f, indent=4, ensure_ascii=False)
+            json.dump(summary, f, indent=4, ensure_ascii=False, sort_keys=True)
     
     @staticmethod
     def migration_summary():
-        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_filtered.json'
+        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_commits_filtered.json'
         with open(input_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
@@ -206,10 +206,10 @@ class CommitFilterer:
                     if keyword_lower in [k.lower() for k in commit['matches']]:
                         count += 1
                         print(f"Found match in repo '{repo}' for keyword '{keyword}': {commit['message']}")
-            summary[keyword] = count
-        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_summary.json'
+            summary[keyword_lower] = count
+        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_commits_summary.json'
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(summary, f, indent=4, ensure_ascii=False)
+            json.dump(summary, f, indent=4, ensure_ascii=False, sort_keys=True)
 
 
 if __name__ == "__main__":

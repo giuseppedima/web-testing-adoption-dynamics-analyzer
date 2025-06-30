@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test Changes Viewer</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #top-info {
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        height: calc(100vh - 120px); /* Altezza rimanente dopo il top-info e bottom-controls */
+    }
+
+    #commit-message, #diff-content {
+        flex: 1;
+        padding: 10px;
+        box-sizing: border-box;
+        overflow-y: auto; /* Abilita lo scorrimento verticale */
+    }
+
+    #commit-message textarea {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        resize: none; /* Disabilita il ridimensionamento manuale */
+        border: none; /* Rimuove il bordo del textarea */
+        background: transparent; /* Sfondo trasparente per abbinare al contenitore */
+        font-family: monospace; /* Font adatto per testo tipo codice */
+        white-space: pre-wrap; /* Mantiene i ritorni a capo */
+    }
+
+    #diff-text {
+        white-space: pre-wrap; /* Mantiene i ritorni a capo */
+        font-family: monospace; /* Font adatto per codice */
+        padding: 10px;
+        height: 100%;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        background-color: #f8f8f8;
+    }
+
+    .line-addition {
+        background-color: #d4edda; /* Verde chiaro */
+    }
+
+    .line-deletion {
+        background-color: #f8d7da; /* Rosso chiaro */
+    }
+
+    #bottom-controls {
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+        text-align: center;
+    }
+
+    button {
+        margin: 5px;
+    }
+
+    #explanation {
+        padding: 10px;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+</style>
+
+
+</head>
+<body>
+<!-- Top information div -->
+<div id="top-info">
+    <div><strong>Repo:</strong> <span id="repo"></span></div>
+    <div><strong>Test:</strong> <span id="test"></span></div>
+    <div><strong>Commit Date:</strong> <span id="commit-date"></span></div>
+    <div><strong>Row:</strong> <span id="current-index"></span> of <span id="total-rows"></span></div>
+    <div>
+        <input type="number" id="index-input" min="0" placeholder="Enter row index">
+        <button id="set-index-button">Set Index</button>
+    </div>
+</div>
+
+<!-- Explanation div for diff symbols -->
+<div id="explanation">
+    <h3>How to interpret the diff symbols:</h3>
+    <p><strong>+: </strong>Indicates lines that have been added compared to the previous version of the file.</p>
+    <p><strong>-: </strong>Indicates lines that have been deleted compared to the previous version of the file.</p>
+    <p><strong>Modified lines:</strong><br>
+       Modified lines are represented by a combination of removed (-) and added (+) lines. In other words, a modified line will appear as a deleted line (preceded by -) and a new added line (preceded by +) in the diff.</p>
+</div>
+
+<!-- Content div with commit message and diff content -->
+<div id="content">
+    <div id="commit-message">
+        <strong>Commit Message:</strong>
+        <textarea id="commit-message-text" readonly></textarea>
+    </div>
+    <div id="diff-content">
+        <strong>Diff:</strong>
+        <div id="diff-text" class="diff-text" contenteditable="false"></div>
+    </div>
+</div>
+
+
+<!-- Bottom controls div -->
+<div id="bottom-controls">
+    <div style="display: flex; align-items: stretch; width: 100%;">
+        <textarea id="change-label" placeholder="Enter label here..." style="flex-grow: 1;"></textarea>
+        <select id="label-options" style="flex-grow: 1; margin-left: 10px;">
+        </select>
+        <button id="save-button">Save</button>
+
+    </div>
+    <div>
+        <button id="prev-button">Previous</button>
+        <button id="next-button">Next</button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

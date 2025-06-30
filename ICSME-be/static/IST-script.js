@@ -1,5 +1,6 @@
 let currentIndex = 0;
 let totalRows = 0;
+let filteredIndices = null; // Nuova variabile globale
 
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/get_total_rows')
@@ -8,6 +9,68 @@ document.addEventListener('DOMContentLoaded', () => {
             totalRows = data.total_rows;
             document.getElementById('total-rows').textContent = totalRows;
             loadRow(currentIndex);
+            updateFilterResultsInfo();
+        });
+
+    $('#keyword-filter').select2({
+        placeholder: "Select the keywords",
+        width: '100%'
+    });
+
+    document.getElementById('clear-keyword-filter').addEventListener('click', function() {
+        $('#keyword-filter').val(null).trigger('change');
+        document.getElementById('apply-keyword-filter').click(); // Simula il click per applicare il filtro
+    });
+
+    document.getElementById('apply-keyword-filter').addEventListener('click', function() {
+        const selectedKeywords = $('#keyword-filter').val();
+        console.log('Selected keywords:', selectedKeywords);
+
+        // Se nessuna keyword selezionata, resetta la visualizzazione
+        if (!selectedKeywords || selectedKeywords.length === 0) {
+            filteredIndices = null; // Reset filtri
+            loadRowByIndex(0);
+            return;
+        }
+
+        // Invia le keyword selezionate al backend per filtrare
+        fetch('/filter_by_keywords', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ keywords: selectedKeywords })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const indices = data.indices;
+            if (indices.length === 0) {
+                alert('Nessun risultato trovato per le keyword selezionate.');
+                filteredIndices = null;
+                return;
+            }
+            filteredIndices = indices;
+            loadRowByIndex(0);
+        })
+        .catch(error => {
+            alert('Errore durante il filtraggio: ' + error);
+        });
+    });
+
+    // Popola le opzioni dal backend
+    fetch('/keywords')
+        .then(response => response.json())
+        .then(keywords => {
+            const select = document.getElementById('keyword-filter');
+            select.innerHTML = ''; // Pulisci le opzioni esistenti
+            keywords.forEach(keyword => {
+                const option = document.createElement('option');
+                option.value = keyword;
+                option.textContent = keyword;
+                select.appendChild(option);
+            });
+            // Aggiorna Select2 dopo aver aggiunto le opzioni
+            $('#keyword-filter').trigger('change');
         });
 });
 
@@ -58,74 +121,60 @@ function loadRow(index) {
                 document.getElementById('change-label').value='';
             }*/
 
+            document.getElementById('view-commit').onclick = function() {
+                window.open(`https://github.com/${data.repo}/commit/${data.hash}`, '_blank');
+            };
+
         });
 }
 
 
-function  setCurrentIndexManually(){
-       const index = parseInt(document.getElementById('index-input').value, 10);
+function loadRowByIndex(index) {
+    if (filteredIndices && filteredIndices.length > 0) {
+        if (index >= 0 && index < filteredIndices.length) {
+            currentIndex = index;
+            loadRow(filteredIndices[currentIndex]);
+        }
+    } else {
+        if (index >= 0 && index < totalRows) {
+            currentIndex = index;
+            loadRow(currentIndex);
+        }
+    }
+    updateFilterResultsInfo();
+}
+
+function setCurrentIndexManually() {
+    const index = parseInt(document.getElementById('index-input').value, 10);
     console.log('set current index manually: ' + index);
 
-    if (!isNaN(index) && index <= totalRows && index >= 1) {
-        currentIndex = index - 1;
-        loadRow(currentIndex);
+    if (!isNaN(index)) {
+        loadRowByIndex(index - 1);
     } else {
-        console.log('Invalid index');
+        alert('Invalid index');
     }
-
 }
 
 function previousRow() {
-    if (currentIndex > 0) {
-        currentIndex--;
-        loadRow(currentIndex);
-    }
+    loadRowByIndex(currentIndex - 1);
 }
 
 function nextRow() {
-    if (currentIndex < totalRows - 1) {
-        currentIndex++;
-        loadRow(currentIndex);
-    }
+    loadRowByIndex(currentIndex + 1);
 }
 
 function saveLabel(label) {
-    const data ={
-        index: currentIndex,
-        change_label : label
+    let realIndex;
+    if (filteredIndices && filteredIndices.length > 0) {
+        realIndex = filteredIndices[currentIndex];
+    } else {
+        realIndex = currentIndex;
     }
-    perform_save_label_request(data)
-
-    /*
-    const label_text = document.getElementById("change-label").value;
-    const selectElement = document.getElementById('label-options'); // Ottieni il riferimento alla select
-    const selectedValue = selectElement.value; // Ottieni il valore selezionato
-    console.log('label_text: '+label_text+' combobox: '+selectedValue)
-    if(label_text!='' && selectedValue!=''){
-       alert('You can only enter a label manually or choose it from the combo box!')
-    }else if (label_text!='' && selectedValue ==''){
-         const data = {
-            index: currentIndex,
-            change_label: label_text
-        };
-         console.log('saving label '+label_text+' row_index: '+currentIndex)
-         perform_save_label_request(data);
-    }else if(label_text=='' && selectedValue!=''){
-        const data = {
-            index: currentIndex,
-            change_label: selectedValue
-        };
-        console.log('saving label '+selectedValue+' row_index: '+currentIndex)
-        perform_save_label_request(data);
-    }else{ //empty case
-        data ={
-            index : currentIndex,
-            change_label:''
-        }
-        perform_save_label_request(data)
-        console.log('deleting the current label from row_index: '+currentIndex);
-    }*/
-
+    const data = {
+        index: realIndex,
+        change_label: label
+    };
+    perform_save_label_request(data);
 }
 
 
@@ -141,7 +190,8 @@ function perform_save_label_request(data){
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert("Label saved successfully!");
+            loadRowByIndex(currentIndex); // Ricarica la riga corrente per aggiornare l'etichetta
+            // alert("Label saved successfully!");
         } else {
             alert("Error: " + data.error);
         }
@@ -205,5 +255,50 @@ function displayDiff(diffText) {
         diffContent.appendChild(lineElement);
     });
 }
+
+function updateFilterResultsInfo() {
+    const infoSpan = document.getElementById('filter-results-info');
+    if (!infoSpan) return;
+    if (filteredIndices && filteredIndices.length > 0) {
+        infoSpan.textContent = `Result ${currentIndex + 1} of ${filteredIndices.length}`;
+    } else {
+        infoSpan.textContent = `Result ${currentIndex + 1} of ${totalRows}`;
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    const active = document.activeElement;
+
+    // Se focus su input indice e Invio, imposta indice manualmente
+    if (event.key === 'Enter' && active && active.id === 'index-input') {
+        setCurrentIndexManually();
+        event.preventDefault();
+        return;
+    }
+
+    // Evita conflitti se si sta scrivendo in un input
+    if (active && (active.tagName === 'INPUT')) return;
+
+    switch(event.key) {
+        case 'ArrowLeft':
+        case 'ArrowUp':
+            previousRow();
+            event.preventDefault();
+            break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+            nextRow();
+            event.preventDefault();
+            break;
+        case 'Enter':
+            saveLabel('useful');
+            event.preventDefault();
+            break;
+        case 'Backspace':
+            saveLabel('not-useful');
+            event.preventDefault();
+            break;
+    }
+});
 
 

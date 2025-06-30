@@ -97,13 +97,14 @@ class CommitFilterer:
             data = json.load(f)
 
         filtered_data = {}
+        lowered_keywords = [k.lower() for k in CommitFilterer.keywords['adoption']]
         for repo, entry in data.items():
             matched_commits = []
 
             # Controllo case-insensitive
             adoption_msg = entry['adoption_commit']['message'].lower()
             matched_keywords = [
-                keyword for keyword in CommitFilterer.keywords['adoption']
+                keyword for keyword in lowered_keywords
                 if re.search(rf'\b{re.escape(keyword.lower())}\b', adoption_msg)
             ]
             if matched_keywords:
@@ -113,7 +114,7 @@ class CommitFilterer:
             for commit in entry['previous_commits']:
                 commit_msg = commit['message'].lower()
                 matched_keywords = [
-                    keyword for keyword in CommitFilterer.keywords['adoption']
+                    keyword for keyword in lowered_keywords
                     if re.search(rf'\b{re.escape(keyword.lower())}\b', commit_msg)
                 ]
                 if matched_keywords:
@@ -136,6 +137,7 @@ class CommitFilterer:
             data = json.load(f)
 
         filtered_data = {}
+        lowered_keywords = [k.lower() for k in CommitFilterer.keywords['migration']]
         for repo, migrations in data.items():
 
             matched_commits = []
@@ -144,7 +146,7 @@ class CommitFilterer:
 
                 migration_msg = migration['migration_commit']['message'].lower()
                 matched_keywords = [
-                    keyword for keyword in CommitFilterer.keywords['migration']
+                    keyword for keyword in lowered_keywords
                     if re.search(rf'\b{re.escape(keyword.lower())}\b', migration_msg)
                 ]
                 if matched_keywords:
@@ -154,7 +156,7 @@ class CommitFilterer:
                 for commit in migration['previous_commits']:
                     commit_msg = commit['message'].lower()
                     matched_keywords = [
-                        keyword for keyword in CommitFilterer.keywords['migration']
+                        keyword for keyword in lowered_keywords
                         if re.search(rf'\b{re.escape(keyword.lower())}\b', commit_msg)
                     ]
                     if matched_keywords:

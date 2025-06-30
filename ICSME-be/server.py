@@ -2,12 +2,11 @@ import os
 
 from flask import Flask, jsonify, render_template,request
 import pandas as pd
+from pathlib import Path
 
 app = Flask(__name__)
 
-#csv_file_path = 'changes_to_analyze_new_merged.csv'
-csv_file_path = '/home/sergio/PycharmProjects/E2E-Miner-A-tool-for-mining-E2E-tests-from-software-repositories/PBT/pbt_files_changes.csv'
-excel_file_path = '/home/sergio/PycharmProjects/ICSME-be/adoption_commits_filtered.xlsx'
+excel_file_path = Path(__file__).parent / 'adoption_commits_filtered.xlsx'
 
 @app.route('/')
 def index():
@@ -16,7 +15,6 @@ def index():
 
 @app.route('/get_csv_data/<int:index>', methods=['GET'])
 def get_csv_data(index):
-    #df = pd.read_csv(csv_file_path)
     df = pd.read_excel(excel_file_path, engine='openpyxl')
     if index < 0 or index >= len(df):
         return jsonify({'error': 'Index out of range'})
@@ -52,8 +50,6 @@ def save_label():
     if index is None or new_label is None:
         return jsonify({'error': 'Index or change_label is missing'}), 400
 
-    # Leggi il CSV
-    #df = pd.read_csv(csv_file_path)
     # Leggi excel
     df = pd.read_excel(excel_file_path,engine='openpyxl')
 
@@ -69,15 +65,42 @@ def save_label():
 
     return jsonify({'success': True, 'message': 'Label saved successfully'})
 
+@app.route('/keywords', methods=['GET'])
+def get_keywords():
+    df = pd.read_excel(excel_file_path, engine='openpyxl')
+    # Filtra solo i valori non vuoti
+    # Estrai tutte le keyword, splitta per virgola, trimma e rendi uniche
+    keywords_series = df['matches'].dropna().apply(lambda x: [kw.strip() for kw in str(x).split(',')])
+    keywords = sorted(set(kw for sublist in keywords_series for kw in sublist if kw))
+    # Trunca ogni keyword a 200 caratteri e aggiungi "..." se necessario
+    keywords = [keyword[:200] + "..." if len(keyword) > 200 else keyword for keyword in keywords]
+
+    return jsonify(keywords)
+
+
 @app.route('/labels', methods=['GET'])
 def get_labels():
-    df = pd.read_csv(csv_file_path)
+    df = pd.read_excel(excel_file_path, engine='openpyxl')
     # Filtra solo i valori non vuoti
     labels = sorted(df['label'].dropna().unique().tolist())
     # Trunca ogni label a 200 caratteri e aggiungi "..." se necessario
     labels = [label[:200] + "..." if len(label) > 200 else label for label in labels]
 
     return jsonify(labels)
+
+@app.route('/filter_by_keywords', methods=['POST'])
+def filter_by_keywords():
+    data = request.get_json()
+    keywords = data.get('keywords', [])
+    if not keywords:
+        return jsonify({'indices': []})
+    df = pd.read_excel(excel_file_path, engine='openpyxl')
+    indices = []
+    for idx, row in df.iterrows():
+        matches = str(row.get('matches', ''))
+        if any(kw in matches for kw in keywords):
+            indices.append(idx)
+    return jsonify({'indices': indices})
 
 if __name__ == '__main__':
     app.run(debug=True)

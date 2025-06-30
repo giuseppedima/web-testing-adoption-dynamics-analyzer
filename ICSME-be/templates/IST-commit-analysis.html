@@ -4,17 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Commit Messages Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-    body {
-        font-family: Arial, sans-serif;
+    html, body {
+        height: 100%;
         margin: 0;
         padding: 0;
+        font-family: Arial, sans-serif;
+    }
+    body {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas:
+            "top"
+            "main"
+            "bottom";
         height: 100vh;
-        display: flex;
-        flex-direction: column;
     }
 
     #top-info {
+        grid-area: top;
         padding: 10px;
         background-color: #f8f9fa;
         border-bottom: 1px solid #ddd;
@@ -25,10 +35,10 @@
     }
 
     #content {
-        flex: 1;
+        grid-area: main;
         display: flex;
         overflow: hidden;
-        height: calc(100vh - 120px);
+        height: 100%;
     }
 
     #commit-message, #diff-content {
@@ -68,13 +78,43 @@
     }
 
     #bottom-controls {
-        padding: 10px;
+        grid-area: bottom;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items: center;
+        padding: 10px 40px;
         background-color: #f8f9fa;
         border-top: 1px solid #ddd;
-        text-align: center;
     }
 
-    button {
+    #filter-container {
+        grid-column: 1;
+        justify-self: stretch;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    #buttons-container {
+        grid-column: 2;
+        justify-self: center;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+    }
+
+    #index-container {
+        grid-column: 3;
+        justify-self: end;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+    }
+
+    #bottom-controls > button,
+    #buttons-container > button,
+    #index-container > button {
         margin: 5px;
     }
 
@@ -86,20 +126,16 @@
         font-size: 14px;
         line-height: 1.5;
     }
-</style>
 
-
+    </style>
 </head>
 <body>
 <div id="top-info">
     <div><strong>Repo:</strong> <span id="repo"></span></div>
     <div><strong>Commit Date:</strong> <span id="commit-date"></span></div>
+    <div><button id="view-commit">View on Github</button></div>
     <div><strong>Keywords:</strong> <span id="keywords"></span></div>
     <div><strong>Row:</strong> <span id="current-index"></span> of <span id="total-rows"></span></div>
-    <div>
-        <input type="number" id="index-input" min="0" placeholder="Enter row index">
-        <button id="set-index-button">Set Index</button>
-    </div>
 </div>
 
 <!-- Content div with commit message and diff content -->
@@ -111,30 +147,29 @@
 </div>
 
 
-<!--
-<div id="bottom-controls">
-    <div style="display: flex; align-items: stretch; width: 100%;">
-        <select id="useful-options" style="flex-grow: 1; margin-left: 10px;">
-          <option value="useful">Useful</option>
-          <option value="not-useful">Not Useful</option>
-        </select>
-        <button id="save-button">Save</button>
-    </div>
-    <div>
-        <button id="prev-button">Previous</button>
-        <button id="next-button">Next</button>
-    </div>
-</div>
--->
-
 <!-- Bottom controls div -->
-<div id="bottom-controls" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
-    <button id="useful-button" style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;">USEFUL</button>
-    <button id="not-useful-button" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;">NOT USEFUL</button>
-    <button id="prev-button" style="background-color: #ccc; color: #333; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;">Previous</button>
-    <button id="next-button" style="background-color: #ccc; color: #333; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;">Next</button>
+<div id="bottom-controls">
+    <div id="filter-container">
+        <label for="keyword-filter">Filter by keywords:</label>
+        <select id="keyword-filter" multiple></select>
+        <button id="apply-keyword-filter" title="Apply filter">Apply Filter</button>
+        <button id="clear-keyword-filter" title="Clear filter" type="button">Clear Filter</button>
+        <span id="filter-results-info" style="margin-left:10px; font-weight:bold;"></span>
+    </div>
+    <div id="buttons-container">
+        <button id="useful-button" style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Useful (Enter key)">USEFUL</button>
+        <button id="not-useful-button" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Not Useful (Backspace key)">NOT USEFUL</button>
+        <button id="prev-button" style="background-color: #ccc; color: #333; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Previous (←/↑ keys)">Previous</button>
+        <button id="next-button" style="background-color: #ccc; color: #333; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Next (→/↓ keys)">Next</button>
+    </div>
+    <div id="index-container">
+        <input type="number" id="index-input" min="1" placeholder="Enter row index">
+        <button id="set-index-button" title="Go to index (Enter key on input field)">Set Index</button>
+    </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="{{ url_for('static', filename='IST-script.js') }}"></script>
 </body>
 </html>

@@ -58,7 +58,25 @@ class MigrationIssueFilterer:
         output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_issues_filtered.json'
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(merged_analysis, f, indent=4, ensure_ascii=False, sort_keys=True)
-
+    
+    @staticmethod
+    def migration_summary():
+        input_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_issues_filtered.json'
+        with open(input_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        summary = {}
+        for _, migrations in data.items():
+            for migration in migrations:
+                for issue in migration['issues']['open'] + migration['issues']['closed']:
+                    for keyword in issue['matches']:
+                        keyword_lower = keyword.lower()
+                        if keyword_lower not in summary:
+                            summary[keyword_lower] = 0
+                        summary[keyword_lower] += 1
+        output_path = Path(__file__).resolve().parent.parent / 'resources' / 'migration_issues_summary.json'
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, indent=4, ensure_ascii=False, sort_keys=True)
 
 if __name__ == "__main__":
-    MigrationIssueFilterer.migration_analysis()
+    # MigrationIssueFilterer.migration_analysis()
+    MigrationIssueFilterer.migration_summary()

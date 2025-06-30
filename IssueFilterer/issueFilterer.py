@@ -8,6 +8,7 @@ class IssueFilterer:
     @staticmethod
     def filter_issues(repository, start_date, end_date, keywords):
         filtered_issues = {"open": [], "closed": []}
+        lowered_keywords = [k.lower() for k in keywords]
         try:
             issue_file = Path(__file__).resolve().parent.parent / 'resources' / 'all_issues' / f'{repository.replace("/", "_", 1)}_all_issues.json'
             with open(issue_file, 'r', encoding='utf-8') as f:
@@ -31,18 +32,20 @@ class IssueFilterer:
 
                         title_msg = issue['title'].lower() if issue['title'] else ''
                         body_msg = issue['body'].lower() if issue['body'] else ''
-                        if append and any(
-                            re.search(rf'\b{re.escape(keyword.lower())}\b', body_msg) or
-                            re.search(rf'\b{re.escape(keyword.lower())}\b', title_msg)
-                            for keyword in keywords
-                        ):
+                        matched_keywords = [
+                            keyword for keyword in lowered_keywords
+                            if re.search(rf'\b{re.escape(keyword)}\b', body_msg) or
+                               re.search(rf'\b{re.escape(keyword)}\b', title_msg)
+                        ]
+                        if append and matched_keywords:
                             filtered_issues[status].append({
                                 "number": issue['number'],
                                 "title": issue['title'],
                                 "body": issue['body'],
                                 "created_at": issue['created_at'],
                                 "updated_at": issue['updated_at'],
-                                "closed_at": issue['closed_at']
+                                "closed_at": issue['closed_at'],
+                                "matches": matched_keywords,
                             })
                     except Exception as e:
                         print(f"Error processing issue {issue['number']} in repository {repository} issue number {issue['number']}: {e}")

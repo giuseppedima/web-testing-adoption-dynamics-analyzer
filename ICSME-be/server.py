@@ -6,11 +6,15 @@ from pathlib import Path
 
 app = Flask(__name__)
 
-excel_file_path = Path(__file__).parent / 'adoption_commits_filtered.xlsx'
+# excel_file_path = Path(__file__).parent / 'adoption_commits_filtered.xlsx'
+# excel_file_path = Path(__file__).parent / 'migration_commits_filtered.xlsx'
+excel_file_path = Path(__file__).parent / 'adoption_issues_filtered.xlsx'
+# excel_file_path = Path(__file__).parent / 'migration_issues_filtered.xlsx'
 
 @app.route('/')
 def index():
-    return render_template('IST-commit-analysis.html')
+    # return render_template('IST-commit-analysis.html')
+    return render_template('IST-issue-analysis.html')
 
 
 @app.route('/get_csv_data/<int:index>', methods=['GET'])
@@ -21,9 +25,10 @@ def get_csv_data(index):
 
     row = df.iloc[index].to_dict()
 
-    # Controlla se 'change_label' è NaN
-    if pd.isna(row['label']):
-        row['label'] = ''  # Assegna una stringa vuota se è NaN
+    # Controlla i NaN
+    for key, value in row.items():
+        if pd.isna(value):
+            row[key] = ''  # Assegna una stringa vuota se è NaN
 
     return jsonify(row)
 

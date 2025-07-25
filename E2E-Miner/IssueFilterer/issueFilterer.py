@@ -54,3 +54,43 @@ class IssueFilterer:
         
         return filtered_issues
 
+    @staticmethod
+    def issues_missed_in_filter(repo, issues):
+        filtered_issues = {"open": [], "closed": []}
+        all_issues = Path(__file__).resolve().parent.parent / 'resources' / 'all_issues' / f'{repo.replace("/", "_", 1)}_all_issues.json'
+        if not all_issues.exists():
+            print(f"File {all_issues} does not exist. Skipping repository {repo}.")
+            return filtered_issues
+        
+        with open(all_issues, 'r', encoding='utf-8') as f:
+            issues_data = json.load(f)
+            for status, issue_list in [('open', issues_data['open']), ('closed', issues_data['closed'])]:
+                for issue in issue_list:
+                    if issue['number'] in issues:
+                        filtered_issues['open' if status == 'open' else 'closed'].append({
+                            "number": issue['number'],
+                            "title": issue['title'],
+                            "body": issue['body'],
+                        "created_at": issue['created_at'],
+                        "updated_at": issue['updated_at'],
+                        "closed_at": issue['closed_at']
+                        
+                    })
+        return filtered_issues
+
+if __name__ == "__main__":
+    input_path = Path(__file__).resolve().parent.parent / 'resources' / 'issues_missed_in_filter.json'
+    to_download = {
+        "layer5io/meshery": [11557],
+        "guardicore/monkey": [3685],
+        "laion-ai/open-assistant": [86],
+        "openrefine/openrefine": [733],
+        "royal-navy/design-system": [3035, 3446]
+    }
+    result = {}
+    for repo, issues in to_download.items():
+        result[repo] = {}
+        result[repo]["issues"] = IssueFilterer.issues_missed_in_filter(repo, issues)
+
+    with open(input_path, 'w', encoding='utf-8') as f:
+        json.dump(result, f, indent=4, ensure_ascii=False, sort_keys=True)

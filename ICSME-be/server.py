@@ -8,8 +8,8 @@ app = Flask(__name__)
 
 # excel_file_path = Path(__file__).parent / 'adoption_commits_filtered.xlsx'
 # excel_file_path = Path(__file__).parent / 'migration_commits_filtered.xlsx'
-excel_file_path = Path(__file__).parent / 'adoption_issues_filtered.xlsx'
-# excel_file_path = Path(__file__).parent / 'migration_issues_filtered.xlsx'
+# excel_file_path = Path(__file__).parent / 'adoption_issues_filtered.xlsx'
+excel_file_path = Path(__file__).parent / 'migration_issues_filtered.xlsx'
 
 @app.route('/')
 def index():

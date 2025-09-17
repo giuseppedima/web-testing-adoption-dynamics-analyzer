@@ -105,7 +105,7 @@ class CommitFilterer:
             adoption_msg = entry['adoption_commit']['message'].lower()
             matched_keywords = [
                 keyword for keyword in lowered_keywords
-                if re.search(rf'\b{re.escape(keyword.lower())}\b', adoption_msg)
+                if re.search(rf'\b{re.escape(keyword)}\b', adoption_msg)
             ]
             if matched_keywords:
                 entry['adoption_commit']['matches'] = matched_keywords
@@ -115,7 +115,7 @@ class CommitFilterer:
                 commit_msg = commit['message'].lower()
                 matched_keywords = [
                     keyword for keyword in lowered_keywords
-                    if re.search(rf'\b{re.escape(keyword.lower())}\b', commit_msg)
+                    if re.search(rf'\b{re.escape(keyword)}\b', commit_msg)
                 ]
                 if matched_keywords:
                     commit['matches'] = matched_keywords
@@ -147,7 +147,7 @@ class CommitFilterer:
                 migration_msg = migration['migration_commit']['message'].lower()
                 matched_keywords = [
                     keyword for keyword in lowered_keywords
-                    if re.search(rf'\b{re.escape(keyword.lower())}\b', migration_msg)
+                    if re.search(rf'\b{re.escape(keyword)}\b', migration_msg)
                 ]
                 if matched_keywords:
                     migration['migration_commit']['matches'] = matched_keywords
@@ -157,7 +157,7 @@ class CommitFilterer:
                     commit_msg = commit['message'].lower()
                     matched_keywords = [
                         keyword for keyword in lowered_keywords
-                        if re.search(rf'\b{re.escape(keyword.lower())}\b', commit_msg)
+                        if re.search(rf'\b{re.escape(keyword)}\b', commit_msg)
                     ]
                     if matched_keywords:
                         commit['matches'] = matched_keywords
@@ -185,7 +185,7 @@ class CommitFilterer:
             count = 0
             for repo, commits in data.items():
                 for commit in commits:
-                    if keyword_lower in [k.lower() for k in commit['matches']]:
+                    if keyword_lower in commit['matches']:
                         count += 1
                         print(f"Found match in repo '{repo}' for keyword '{keyword}': {commit['message']}")
             summary[keyword_lower] = count
@@ -205,7 +205,7 @@ class CommitFilterer:
             count = 0
             for repo, commits in data.items():
                 for commit in commits:
-                    if keyword_lower in [k.lower() for k in commit['matches']]:
+                    if keyword_lower in commit['matches']:
                         count += 1
                         print(f"Found match in repo '{repo}' for keyword '{keyword}': {commit['message']}")
             summary[keyword_lower] = count

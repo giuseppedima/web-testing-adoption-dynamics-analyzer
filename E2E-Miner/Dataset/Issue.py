@@ -6,7 +6,7 @@ from Dataset.Transition import TransitionModel
 class IssueModel(Base):
     __tablename__ = "issue"
     number = Column(Integer, primary_key=True)
-    repository_name = Column(String(), ForeignKey("repository.name"), nullable=False)
+    repository_name = Column(String(), ForeignKey("repository.name"), primary_key=True, nullable=False)
     title = Column(String(), nullable=False)
     body = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False)

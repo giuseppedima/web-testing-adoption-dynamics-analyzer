@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Commit Messages Viewer</title>
-    <link href="{{ url_for('static', filename='select2.min.css') }}" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
     html, body {
         height: 100%;
@@ -28,10 +29,20 @@
         padding: 10px;
         background-color: #f8f9fa;
         border-bottom: 1px solid #ddd;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        align-items: start;
+    }
+
+    #top-info > div {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    #top-info strong {
+        color: #333;
     }
 
     #content {
@@ -39,6 +50,7 @@
         display: flex;
         overflow: hidden;
         height: 100%;
+        flex-direction: row;
     }
 
     #commit-message, #diff-content {
@@ -52,16 +64,16 @@
         width: 100%;
         height: 100%;
         box-sizing: border-box;
-        resize: none; /* Disabilita il ridimensionamento manuale */
-        border: none; /* Rimuove il bordo del textarea */
-        background: transparent; /* Sfondo trasparente per abbinare al contenitore */
-        font-family: monospace; /* Font adatto per testo tipo codice */
-        white-space: pre-wrap; /* Mantiene i ritorni a capo */
+        resize: none;
+        border: none;
+        background: transparent;
+        font-family: monospace;
+        white-space: pre-wrap;
     }
 
     #diff-text {
-        white-space: pre-wrap; /* Mantiene i ritorni a capo */
-        font-family: monospace; /* Font adatto per codice */
+        white-space: pre-wrap;
+        font-family: monospace;
         padding: 10px;
         height: 100%;
         overflow-y: auto;
@@ -70,52 +82,102 @@
     }
 
     .line-addition {
-        background-color: #d4edda; /* Verde chiaro */
+        background-color: #d4edda;
     }
 
     .line-deletion {
-        background-color: #f8d7da; /* Rosso chiaro */
+        background-color: #f8d7da;
     }
 
     #bottom-controls {
         grid-area: bottom;
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        align-items: center;
-        padding: 10px 40px;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px;
         background-color: #f8f9fa;
         border-top: 1px solid #ddd;
     }
 
     #filter-container {
-        grid-column: 1;
-        justify-self: stretch;
-        align-items: flex-start;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
         width: 100%;
     }
 
-    #buttons-container {
-        grid-column: 2;
-        justify-self: center;
+    #filter-container label {
+        font-weight: bold;
+    }
+
+    #filter-container > div {
         display: flex;
-        flex-direction: row;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 5px;
         align-items: center;
+    }
+
+    #keyword-filter {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    #buttons-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        width: 100%;
     }
 
     #index-container {
-        grid-column: 3;
-        justify-self: end;
         display: flex;
-        flex-direction: row;
-        align-items: center;
+        flex-wrap: wrap;
         gap: 5px;
+        align-items: center;
+        width: 100%;
     }
 
-    #bottom-controls > button,
-    #buttons-container > button,
-    #index-container > button {
-        margin: 5px;
+    #index-input {
+        flex: 1;
+        min-width: 120px;
+        padding: 8px;
+    }
+
+    button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    button i {
+        font-size: 16px;
+    }
+
+    #useful-button {
+        background-color: green;
+        color: white;
+    }
+
+    #not-useful-button {
+        background-color: red;
+        color: white;
+    }
+
+    #prev-button, #next-button {
+        background-color: #ccc;
+        color: #333;
+    }
+
+    #view-commit {
+        padding: 8px 12px;
+        font-size: 14px;
     }
 
     #explanation {
@@ -127,15 +189,134 @@
         line-height: 1.5;
     }
 
+    #filter-results-info {
+        white-space: nowrap;
+    }
+
+    /* Media Queries per dispositivi tablet */
+    @media (max-width: 992px) {
+        #top-info {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            font-size: 14px;
+        }
+
+        #bottom-controls {
+            padding: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+    }
+
+    /* Media Queries per dispositivi mobile */
+    @media (max-width: 768px) {
+        #content {
+            flex-direction: column;
+        }
+
+        #commit-message, #diff-content {
+            min-height: 300px;
+        }
+
+        #top-info {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        #bottom-controls {
+            grid-template-columns: 1fr;
+            padding: 8px;
+        }
+
+        #buttons-container {
+            grid-template-columns: 1fr;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+        }
+
+        #filter-container {
+            order: -1;
+        }
+    }
+
+    /* Media Queries per schermi molto piccoli */
+    @media (max-width: 480px) {
+        #top-info {
+            font-size: 12px;
+            padding: 8px;
+        }
+
+        #commit-message textarea {
+            font-size: 12px;
+        }
+
+        #diff-text {
+            font-size: 12px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 13px;
+        }
+    }
+
+    /* Media Queries per schermi grandi */
+    @media (min-width: 1200px) {
+        #bottom-controls {
+            grid-template-columns: 2fr 1fr 1fr;
+            padding: 10px 40px;
+        }
+
+        #filter-container {
+            flex-direction: row;
+            align-items: center;
+        }
+
+        #filter-container label {
+            white-space: nowrap;
+        }
+
+        #buttons-container {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        #index-container {
+            justify-content: flex-end;
+        }
+    }
+
     </style>
 </head>
 <body>
 <div id="top-info">
-    <div><strong>Repo:</strong> <span id="repo"></span></div>
-    <div><strong>Commit Date:</strong> <span id="commit-date"></span></div>
-    <div><button id="view-commit">View on Github</button></div>
-    <div><strong>Keywords:</strong> <span id="keywords"></span></div>
-    <div><strong>Row:</strong> <span id="current-index"></span> of <span id="total-rows"></span></div>
+    <div>
+        <strong>Repo:</strong>
+        <span id="repo"></span>
+    </div>
+    <div>
+        <strong>Commit Date:</strong>
+        <span id="commit-date"></span>
+    </div>
+    <div>
+        <button id="view-commit">
+            <i class="fab fa-github"></i>
+            View on Github
+        </button>
+    </div>
+    <div>
+        <strong>Keywords:</strong>
+        <span id="keywords"></span>
+    </div>
+    <div>
+        <strong>Row:</strong>
+        <span><span id="current-index"></span> of <span id="total-rows"></span></span>
+    </div>
 </div>
 
 <!-- Content div with commit message and diff content -->
@@ -152,24 +333,45 @@
     <div id="filter-container">
         <label for="keyword-filter">Filter by keywords:</label>
         <select id="keyword-filter" multiple></select>
-        <button id="apply-keyword-filter" title="Apply filter">Apply Filter</button>
-        <button id="clear-keyword-filter" title="Clear filter" type="button">Clear Filter</button>
+        <button id="apply-keyword-filter" title="Apply filter">
+            <i class="fas fa-filter"></i>
+            Apply Filter
+        </button>
+        <button id="clear-keyword-filter" title="Clear filter" type="button">
+            <i class="fas fa-times-circle"></i>
+            Clear Filter
+        </button>
         <span id="filter-results-info" style="margin-left:10px; font-weight:bold;"></span>
     </div>
     <div id="buttons-container">
-        <button id="useful-button" style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Useful (Enter key)">USEFUL</button>
-        <button id="not-useful-button" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Not Useful (Backspace key)">NOT USEFUL</button>
-        <button id="prev-button" style="background-color: #ccc; color: #333; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Previous (←/↑ keys)">Previous</button>
-        <button id="next-button" style="background-color: #ccc; color: #333; padding: 10px 20px; border: none; border-radius: 5px; min-width: 120px; font-weight: bold;" title="Next (→/↓ keys)">Next</button>
+        <button id="useful-button" title="Useful (Enter key)">
+            <i class="fas fa-thumbs-up"></i>
+            USEFUL
+        </button>
+        <button id="not-useful-button" title="Not Useful (Backspace key)">
+            <i class="fas fa-thumbs-down"></i>
+            NOT USEFUL
+        </button>
+        <button id="prev-button" title="Previous (←/↑ keys)">
+            <i class="fas fa-chevron-left"></i>
+            Previous
+        </button>
+        <button id="next-button" title="Next (→/↓ keys)">
+            Next
+            <i class="fas fa-chevron-right"></i>
+        </button>
     </div>
     <div id="index-container">
         <input type="number" id="index-input" min="1" placeholder="Enter row index">
-        <button id="set-index-button" title="Go to index (Enter key on input field)">Set Index</button>
+        <button id="set-index-button" title="Go to index (Enter key on input field)">
+            <i class="fas fa-arrow-right"></i>
+            Set Index
+        </button>
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='jquery-3.6.0.min.js') }}"></script>
-<script src="{{ url_for('static', filename='select2.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script src="{{ url_for('static', filename='IST-commit-script.js') }}"></script>
 </body>
 </html>

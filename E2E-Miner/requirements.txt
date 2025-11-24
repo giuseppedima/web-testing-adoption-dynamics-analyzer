@@ -53,6 +53,7 @@ GitPython==3.1.43
 #javalang @ git+https://github.com/jose/javalang.git@3bf4bf8681e25f7126ea2dca863335625cea312e
 #jeepney==0.7.1
 #jsonschema==3.2.0
+kaleido==0.2.1
 #keyring==23.5.0
 #kiwisolver==1.4.7
 #language-selector==0.1
@@ -86,6 +87,7 @@ pandas==2.2.3
 #paramiko==2.9.3
 #pexpect==4.8.0
 #Pillow==9.0.1
+plotly==5.13.1
 #pluggy==1.0.0
 #protobuf==3.12.4
 #psycopg2==2.9.2

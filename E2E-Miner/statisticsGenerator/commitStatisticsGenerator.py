@@ -3,6 +3,7 @@ import pandas as pd
 import json
 from environment import PATH_TO_ISSUES_DOWNLOAD
 import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 16, 'svg.fonttype': 'none'})  # Increase global font size and make the text selectable
 
 class CommitStatisticsGenerator:
     @staticmethod
@@ -54,25 +55,29 @@ class CommitStatisticsGenerator:
 
     @staticmethod
     def generate_side_by_side_pie_charts():
-        previous_adoption_commits, adoption_commits, previous_migration_commits, migration_commits = CommitStatisticsGenerator.get_all_commits_count()
-        values1 = [adoption_commits+previous_adoption_commits, migration_commits+previous_migration_commits]
+        # previous_adoption_commits, adoption_commits, previous_migration_commits, migration_commits = CommitStatisticsGenerator.get_all_commits_count()
+        # values1 = [adoption_commits+previous_adoption_commits, migration_commits+previous_migration_commits]
+        values1 = [5032, 1716]
 
-        adoption_commits_after_filtering, migration_commits_after_filtering = CommitStatisticsGenerator.get_commits_after_filtering_count()
-        values2 = [adoption_commits_after_filtering, migration_commits_after_filtering]
+        # adoption_commits_after_filtering, migration_commits_after_filtering = CommitStatisticsGenerator.get_commits_after_filtering_count()
+        # values2 = [adoption_commits_after_filtering, migration_commits_after_filtering]
+        values2 = [587, 337]
 
-        adoption_commits_after_labeling, migration_commits_after_labeling = CommitStatisticsGenerator.get_commits_after_labeling_count()
-        values3 = [adoption_commits_after_labeling, migration_commits_after_labeling]
+        # adoption_commits_after_labeling, migration_commits_after_labeling = CommitStatisticsGenerator.get_commits_after_labeling_count()
+        # values3 = [adoption_commits_after_labeling, migration_commits_after_labeling]
+        values3 = [9, 1]
 
         colors = ['#1f77b4', '#ff7f0e']
-        plt.rcParams.update({'font.size': 16, 'svg.fonttype': 'none'})  # Increase global font size and make the text selectable
 
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        fig, axes = plt.subplots(1, 3, figsize=(10, 6))
 
         wedges1, _, _ = axes[0].pie(
             values1,
             labels=None,
             colors=colors,
             autopct=lambda p: '{:.0f}'.format(p * sum(values1) / 100) if p > 0 else '',
+            startangle=90,
+            counterclock=False
         )
         axes[0].set_title("Before Filtering")
 
@@ -81,6 +86,8 @@ class CommitStatisticsGenerator:
             labels=None,
             colors=colors,
             autopct=lambda p: '{:.0f}'.format(p * sum(values2) / 100) if p > 0 else '',
+            startangle=90,
+            counterclock=False
         )
         axes[1].set_title("After Filtering")
 
@@ -89,16 +96,18 @@ class CommitStatisticsGenerator:
             labels=None,
             colors=colors,
             autopct=lambda p: '{:.0f}'.format(p * sum(values3) / 100) if p > 0 else '',
+            startangle=90,
+            counterclock=False
         )
         axes[2].set_title("After Labeling")
 
         # Legenda unica
         fig.legend(
             [wedges1[0], wedges1[1]],
-            ['Adoption commits', 'Migration commits'],
-            loc='lower center',
+            ['Adoption Commits', 'Migration Commits'],
+            loc='center',
             ncol=2,
-            bbox_to_anchor=(0.5, -0.05)
+            bbox_to_anchor=(0.5, 0.2)
         )
 
         plt.tight_layout()

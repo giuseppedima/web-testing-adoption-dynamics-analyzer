@@ -64,11 +64,11 @@ class IssueStatisticsGenerator:
         adoption_issues_after_labeling, migration_issues_after_labeling = 40,25#IssueStatisticsGenerator.get_issues_after_labeling_count()
 
         labels = [
-            "Total issues",
-            "Filtered issues (Adoption)",
-            "Filtered issues (Migration)",
-            "Useful issues (Adoption)",
-            "Useful issues (Migration)"
+            "Total Issues",
+            "Filtered Issues (Adoption)",
+            "Filtered Issues (Migration)",
+            "Useful Issues (Adoption)",
+            "Useful Issues (Migration)"
         ]
         values = [
             total_issues,
@@ -78,23 +78,34 @@ class IssueStatisticsGenerator:
             migration_issues_after_labeling
         ]
 
-        fig5, ax5 = plt.subplots(figsize=(12, 6))
-        bars = ax5.bar(labels, values, color=["gray", '#1f77b4', '#ff7f0e', '#1f77b4', '#ff7f0e'])
+        fig5, ax5 = plt.subplots(figsize=(10, 6))
+        bars = ax5.bar(labels, values, color=["gray", '#1f77b4', '#ff7f0e', '#1f77b4', '#ff7f0e'], width=0.6)
 
         ax5.set_ylabel("Number of issues")
         ax5.set_yscale('log')  # Use logarithmic scale
+        ax5.set_ylim(top=10**7)  # Set upper limit to avoid collision with top border
 
         ax5.set_xticks(range(len(labels)))
         ax5.set_xticklabels(labels, rotation=30, ha='right')
         # ax5.set_title("Issues statistics (log scale)")
-        # Add values above bars
-        for bar in bars:
+        # Add values above bars - adjust position for specific bars
+        for i, bar in enumerate(bars):
             height = bar.get_height()
-            ax5.annotate('{}'.format(height),
+            if i == 0:  # Total Issues - centered above
+                xytext = (0, 3)
+                ha = 'center'
+            elif i in [1, 3]:  # Adoption - top left
+                xytext = (-bar.get_width() / 2 - 5, 3)
+                ha = 'right'
+            else:  # Migration - top right
+                xytext = (bar.get_width() / 2 + 5, 3)
+                ha = 'left'
+            
+            ax5.annotate('{:,}'.format(int(height)),
                         xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
+                        xytext=xytext,
                         textcoords="offset points",
-                        ha='center', va='bottom')
+                        ha=ha, va='bottom')
         plt.tight_layout()
         plt.savefig(Path(__file__).parent / 'issues_statistics.svg')
 
@@ -113,12 +124,12 @@ class IssueStatisticsGenerator:
             'Total Issues',
             'Filter\n(Adoption)',
             'Filter\n(Migration)',
-            'Manual Validation\n(Adoption)',
-            'Manual Validation\n(Migration)'
+            'Manual Classification\n(Adoption)',
+            'Manual Classification\n(Migration)'
         ]
-        colors = ['#1f77b4', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+        colors = ['gray', '#1f77b4', '#ff7f0e', '#1f77b4', '#ff7f0e']
 
-        fig, ax = plt.subplots(figsize=(8, 6))  # Riduci la figura
+        fig, ax = plt.subplots(figsize=(10, 6)) 
 
         max_width = 4  # Rettangoli più corti
         log_values = np.log10(np.array(values) + 1)
@@ -136,24 +147,10 @@ class IssueStatisticsGenerator:
                                 facecolor=color, alpha=0.7)
             ax.add_patch(rect)
 
-            if i == 0:  # Total Issues (sinistra)
-                ha_val = 'right'
-                x_val = x_pos - width/2 - 0.3
-            elif i in [1, 3]:  # Adoption (sinistra)
-                ha_val = 'right'
-                x_val = x_pos - width/2 - 0.3
-            elif i in [2, 4]:  # Migration (destra)
-                ha_val = 'left'
-                x_val = x_pos + width/2 + 0.3
-            else:
-                ha_val = 'center'
-                x_val = x_pos
+            ax.text(x_pos, y_pos-0.25, f'{value:,}', 
+                    fontsize=11, fontweight='bold', va='center', ha='center')
 
-            # Solo valore assoluto
-            ax.text(x_val, y_pos, f'{value:,}', 
-                    fontsize=11, fontweight='bold', va='center', ha=ha_val)
-
-            ax.text(x_pos, y_pos, stage, fontsize=10, ha='center', va='center', 
+            ax.text(x_pos, y_pos+0.13, stage, fontsize=10, ha='center', va='center', 
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
 
         # Linee di collegamento
@@ -162,30 +159,29 @@ class IssueStatisticsGenerator:
         ax.plot([-1.5, -1.5], [y_positions[1]-0.4, y_positions[3]+0.4], 'k--', alpha=0.5, linewidth=1)
         ax.plot([1.5, 1.5], [y_positions[2]-0.4, y_positions[4]+0.4], 'k--', alpha=0.5, linewidth=1)
 
-        ax.set_xlim(-3.5, 3.5)
-        ax.set_ylim(3, 9)
+        ax.set_xlim(-2.9, 2.9)
+        ax.set_ylim(3.5, 8.5)
         ax.set_aspect('equal')
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
             spine.set_visible(False)
 
-        plt.tight_layout(pad=0.5)
-        plt.savefig(Path(__file__).parent / 'filtering_funnel.svg', bbox_inches='tight')  # Riduci il bianco
+        plt.savefig(Path(__file__).parent / 'filtering_funnel.svg', bbox_inches='tight', pad_inches=0.05)
 
 
 
 if __name__ == "__main__":
-    # open_issues, closed_issues = IssueStatisticsGenerator.get_issues_count()
-    # total_issues = open_issues + closed_issues
-    # print("Issues count: %d" % total_issues)
-    # print("Open issues count: %d" % open_issues)
-    # print("Closed issues count: %d" % closed_issues)
-    # adoption_issues_after_filtering, migration_issues_after_filtering = IssueStatisticsGenerator.get_issues_after_filtering_count()
-    # print("Adoption issues after filtering: %d" % adoption_issues_after_filtering)
-    # print("Migration issues after filtering: %d" % migration_issues_after_filtering)
-    # adoption_issues_after_labeling, migration_issues_after_labeling = IssueStatisticsGenerator.get_issues_after_labeling_count()
-    # print("Adoption issues after labeling: %d" % adoption_issues_after_labeling)
-    # print("Migration issues after labeling: %d" % migration_issues_after_labeling)
-    #IssueStatisticsGenerator.generate_bar_chart_issues()
-    # IssueStatisticsGenerator.create_filtering_funnel()
+    open_issues, closed_issues = IssueStatisticsGenerator.get_issues_count()
+    total_issues = open_issues + closed_issues
+    print("Issues count: %d" % total_issues)
+    print("Open issues count: %d" % open_issues)
+    print("Closed issues count: %d" % closed_issues)
+    adoption_issues_after_filtering, migration_issues_after_filtering = IssueStatisticsGenerator.get_issues_after_filtering_count()
+    print("Adoption issues after filtering: %d" % adoption_issues_after_filtering)
+    print("Migration issues after filtering: %d" % migration_issues_after_filtering)
+    adoption_issues_after_labeling, migration_issues_after_labeling = IssueStatisticsGenerator.get_issues_after_labeling_count()
+    print("Adoption issues after labeling: %d" % adoption_issues_after_labeling)
+    print("Migration issues after labeling: %d" % migration_issues_after_labeling)
+    IssueStatisticsGenerator.generate_bar_chart_issues()
+    IssueStatisticsGenerator.create_filtering_funnel()

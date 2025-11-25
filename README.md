@@ -37,20 +37,21 @@ The codebase is organized into modular components reflecting the research phases
 * ❌ Incorrect: `cd module_name && python cli.py`
 
 For more details, refer to each module's help command:
+
 ```bash
 python -m module_name.cli --help
 ```
 
 ## 🚀 Setup
 ### 1. (optional) Create and activate a virtual environment:
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    ```
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
 ### 2. Install the required dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+```bash
+pip install -r requirements.txt
+```
 ### 3. Configure Environment:
 Create a .env file in resources/ (use [`resources/.env.example`](./resources/.env.example) as a template) to configure the DB path and GitHub Token.
 

@@ -4,13 +4,13 @@
 __pycache__/
 ~
 *#
-*.csv
+# *.csv
 *.log
-*.xlsx
+# *.xlsx
 *.png
 *.db
 *.db-journal
-*.json
+# *.json
 *.svg
 *.pyc
 resources/*.db

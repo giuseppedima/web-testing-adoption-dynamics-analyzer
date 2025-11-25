@@ -1,0 +1,85 @@
+{
+    "LAION-AI/Open-Assistant": {
+        "issues": {
+            "closed": [
+                {
+                    "body": "there are several frameworks that simulate browser-interactions and are able to quickly test whether the UI is behaving as expected.\r\n\r\n- [x] research the pros and cons of different frameworks\r\n- [x] decide one a framework (cypress)\r\n- [x] implement a few example tests\r\n- [x] write [instructions](https://github.com/LAION-AI/Open-Assistant/tree/main/website/cypress) for people who want to write their own tests",
+                    "closed_at": "2022-12-31T00:12:06Z",
+                    "created_at": "2022-12-27T13:32:50Z",
+                    "number": 86,
+                    "title": "Write instructions and examples for testing the website UI",
+                    "updated_at": "2022-12-31T09:05:25Z"
+                }
+            ],
+            "open": []
+        }
+    },
+    "OpenRefine/OpenRefine": {
+        "issues": {
+            "closed": [
+                {
+                    "body": "The testing tool that we use for our (relatively limited) front end tests is basically abandoned, so we should switch to something better supported such as Selenium 2.  One possibility would seem to be to use a free open source plan from Sauce Labs in conjunction with our Travis CI build/test setup.\r\n\r\nhttp://sauceio.com/index.php/2013/03/run-your-selenium-tests-completely-in-the-cloud-using-travis-ci-and-sauce-labs/\r\n\r\n",
+                    "closed_at": "2021-09-26T11:44:56Z",
+                    "created_at": "2013-06-12T19:05:44Z",
+                    "number": 733,
+                    "title": "Implement front end browser-based UI tests",
+                    "updated_at": "2021-09-26T11:44:56Z"
+                }
+            ],
+            "open": []
+        }
+    },
+    "Royal-Navy/design-system": {
+        "issues": {
+            "closed": [
+                {
+                    "body": "We decided after #3035 to migrate the end-to-end tests from Cypress to Playwright.\r\n\r\nFrom that issue:\r\n\r\n> Cypress has several limitations relating to things like keyboard navigation which is preventing us from writing comprehensive and realistic tests.",
+                    "closed_at": "2022-10-06T08:42:37Z",
+                    "created_at": "2022-09-14T09:35:13Z",
+                    "number": 3446,
+                    "title": "Migrate e2e tests to Playwright",
+                    "updated_at": "2022-10-06T08:42:37Z"
+                },
+                {
+                    "body": "Cypress has several limitations relating to things like keyboard navigation which is preventing us from writing comprehensive and realistic tests.\r\n\r\nInvestigate Playwright as an alternative.",
+                    "closed_at": "2022-02-02T11:40:15Z",
+                    "created_at": "2022-01-28T13:58:57Z",
+                    "number": 3035,
+                    "title": "Spike: Investigate using Playwright for end-to-end tests",
+                    "updated_at": "2022-02-02T11:40:15Z"
+                }
+            ],
+            "open": []
+        }
+    },
+    "guardicore/monkey": {
+        "issues": {
+            "closed": [
+                {
+                    "body": "# Spike\r\n\r\n## Objective\r\n- Unit tests: Find a lib that will be used for unit tests (e.g.: jest, karma, mocha, etc)\r\n- App tests: Find a framework that will be used to test our app (e.g.: cypress, selenium, testim.io, etc)\r\n\r\n## Scope\r\n1-2 days\r\n\r\n## Conclusions\r\nJest & Cypress",
+                    "closed_at": "2023-10-02T09:08:18Z",
+                    "created_at": "2023-09-13T07:01:35Z",
+                    "number": 3685,
+                    "title": "UI Tests",
+                    "updated_at": "2023-10-02T09:08:18Z"
+                }
+            ],
+            "open": []
+        }
+    },
+    "layer5io/meshery": {
+        "issues": {
+            "closed": [
+                {
+                    "body": "### Current Behavior\r\nAs we are migrating our e2e tests to Playwright. In this migration, we will include comprehensive tests for the Service Mesh Performance Management component. This will ensure that functionalities such as running performance tests, viewing and editing performance profiles, deleting profiles, viewing and comparing test results, and scheduling tests are thoroughly tested and tracked in  [ Meshery Test Plan](https://docs.google.com/spreadsheets/d/13Ir4gfaKoAX9r8qYjAFFl_U9ntke4X5ndREY1T7bnVs/edit?pli=1&gid=0#gid=0).\r\n\r\n### Desired Behavior\r\nMigrate the existing tests to Playwright to achieve a more robust and efficient testing framework. The new Playwright tests should cover the following scenarios:\r\n\r\n- [x] `Run a performance test`\r\n\r\n- [x]  `Run a performance test with a performance profile`\r\n\r\n- [x]  `View/Edit the configuration of a performance profile`\r\n\r\n- [ ]  `Delete a performance profile`\r\n\r\n- [x]  `View results from a performance profile`\r\n\r\n- [x] ` View detailed result of a performance profile (Graph Visualiser)`\r\n\r\n- [ ] `Download, compare and schedule a performance test`\r\n\r\n\r\n\r\n---\r\n\r\n### Contributor [Guides](https://docs.meshery.io/project/contributing) and [Handbook](https://layer5.io/community/handbook)\r\n\r\n- 🎨 Wireframes and [designs for Meshery UI](https://www.figma.com/file/SMP3zxOjZztdOLtgN4dS2W/Meshery-UI) in Figma [(open invite)](https://www.figma.com/team_invite/redeem/qJy1c95qirjgWQODApilR9)\r\n- 🖥 [Contributing to Meshery UI](https://docs.meshery.io/project/contributing/contributing-ui)\r\n- 🙋🏾🙋🏼 Questions: [Discussion Forum](http://discuss.meshery.io) and [Community Slack](https://slack.meshery.io)\r\n",
+                    "closed_at": "2024-09-06T11:00:40Z",
+                    "created_at": "2024-08-05T21:28:10Z",
+                    "number": 11557,
+                    "title": "Playwright Tests for UI/Meshery-server Service Mesh Performance Management",
+                    "updated_at": "2024-09-06T11:00:40Z"
+                }
+            ],
+            "open": []
+        }
+    }
+}

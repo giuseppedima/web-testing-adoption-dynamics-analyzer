@@ -1,0 +1,23 @@
+{
+    "add e2e": 49,
+    "add test": 78,
+    "added e2e": 8,
+    "added test": 8,
+    "adoption": 422,
+    "browser": 1806,
+    "bug": 5079,
+    "create test": 13,
+    "cypress": 341,
+    "first test": 14,
+    "frontend": 616,
+    "gui": 102,
+    "initial test": 3,
+    "playwright": 257,
+    "prevent": 521,
+    "puppeteer": 73,
+    "selenium": 35,
+    "test setup": 28,
+    "ui": 1838,
+    "user interface": 41,
+    "verify": 706
+}

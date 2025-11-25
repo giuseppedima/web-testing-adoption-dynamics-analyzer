@@ -1,0 +1,1 @@
+"""Total issue analysis module."""
